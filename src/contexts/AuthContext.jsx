@@ -98,9 +98,22 @@ export const AuthProvider = ({ children }) => {
   };
 
   const isAuthenticated = !!user && !!token;
-  const isAdmin = user?.role?.name === 'Jefe';
-  const isMechanic = user?.role?.name === 'Mecánico';
-  const isClient = user?.role?.name === 'Cliente';
+  // Normaliza el rol a una clave conocida
+  const normalizeRoleName = (name) => {
+    if (!name) return null;
+    const n = String(name).trim().toLowerCase();
+    if (['admin', 'administrador', 'administradora'].includes(n)) return 'admin';
+    if (['jefe', 'jefe de mecanico', 'jefe de mecánico', 'jefe mecanico'].includes(n)) return 'jefe';
+    if (['mecanico', 'mecánico'].includes(n)) return 'mecanico';
+    if (['cliente', 'client'].includes(n)) return 'cliente';
+    return n;
+  };
+
+  const roleKey = normalizeRoleName(user?.role?.name);
+  const isAdmin = roleKey === 'admin';
+  const isChief = roleKey === 'jefe';
+  const isMechanic = roleKey === 'mecanico';
+  const isClient = roleKey === 'cliente';
 
   const value = {
     user,
@@ -108,8 +121,10 @@ export const AuthProvider = ({ children }) => {
     loading,
     isAuthenticated,
     isAdmin,
+    isChief,
     isMechanic,
     isClient,
+    roleKey,
     login,
     register,
     logout,

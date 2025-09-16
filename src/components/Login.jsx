@@ -8,7 +8,7 @@ import { Eye, EyeOff, Car, Wrench, User } from 'lucide-react';
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, checkAuth, roleKey } = useAuth();
   const navigate = useNavigate();
 
   const {
@@ -23,7 +23,10 @@ const Login = () => {
       const result = await login(data.email, data.password);
       if (result.success) {
         toast.success('¡Login exitoso!');
-        navigate('/home');
+        // Asegura que el contexto tenga el usuario actualizado
+        await checkAuth();
+        const map = { cliente: '/home/cliente', mecanico: '/home/mecanico', jefe: '/home/jefe', admin: '/home/admin' };
+        navigate(map[roleKey] || '/home');
       } else {
         toast.error(result.message || 'Error en el login');
       }
@@ -40,10 +43,10 @@ const Login = () => {
         {/* Header */}
         <div className="text-center">
           <div className="mx-auto h-16 w-16 bg-indigo-600 rounded-full flex items-center justify-center mb-4">
-            <Car className="h-8 w-8 text-white" />
+            <img src="/logo.png" alt="Logo" className="h-25 w-25" />
           </div>
           <h2 className="text-3xl font-bold text-gray-900">
-            Taller Interestelar
+            Taller Interestellar
           </h2>
           <p className="mt-2 text-sm text-gray-600">
             Sistema de Gestión Mecánica
@@ -144,6 +147,10 @@ const Login = () => {
               <div className="flex items-center space-x-2">
                 <User className="h-4 w-4" />
                 <span>Cliente: cliente1@email.com / cliente123</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <User className="h-4 w-4" />
+                <span>Jefe: jefe@taller.com / jefe123</span>
               </div>
             </div>
 

@@ -48,9 +48,12 @@ export const authService = {
 export const usersService = {
   getAll: () => api.get('/users'),
   getById: (id) => api.get(`/users/${id}`),
+  create: (data) => api.post('/users', data),
   update: (id, data) => api.put(`/users/${id}`, data),
   delete: (id) => api.delete(`/users/${id}`),
   getMechanics: () => api.get('/users/mechanics/list'),
+  getBosses: () => api.get('/users/bosses/list'),
+  assignBossToMechanic: (mechanicId, bossId) => api.put(`/users/mechanics/${mechanicId}/assign-boss`, { bossId }),
   getClients: () => api.get('/users/clients/list'),
   changePassword: (id, data) => api.put(`/users/${id}/change-password`, data),
 };
@@ -58,6 +61,8 @@ export const usersService = {
 export const carsService = {
   getAll: () => api.get('/cars'),
   getById: (id) => api.get(`/cars/${id}`),
+  getByPlate: (plate) => api.get(`/cars/plate/${plate}`),
+  getByClient: (clientId) => api.get(`/cars/client/${clientId}`),
   create: (data) => api.post('/cars', data),
   update: (id, data) => api.put(`/cars/${id}`, data),
   delete: (id) => api.delete(`/cars/${id}`),
@@ -83,6 +88,15 @@ export const paymentsService = {
   getByRepair: (repairId) => api.get(`/payments/repair/${repairId}`),
   getByClient: (clientId) => api.get(`/payments/client/${clientId}`),
   getByStatus: (status) => api.get(`/payments/status/${status}`),
+};
+
+export const requestsService = {
+  create: (data) => api.post('/requests', data),
+  getByBoss: (bossId) => api.get(`/requests/boss/${bossId}`),
+  getByMechanic: (mechanicId) => api.get(`/requests/mechanic/${mechanicId}`),
+  getByClient: (clientId) => api.get(`/requests/client/${clientId}`),
+  assignMechanic: (id, mechanicId) => api.put(`/requests/${id}/assign`, { mechanicId }),
+  updateStatus: (id, data) => api.put(`/requests/${id}/status`, data),
 };
 
 export default api;
