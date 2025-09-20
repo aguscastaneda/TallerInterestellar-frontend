@@ -106,6 +106,7 @@ export const AuthProvider = ({ children }) => {
     if (['jefe', 'jefe de mecanico', 'jefe de mecánico', 'jefe mecanico'].includes(n)) return 'jefe';
     if (['mecanico', 'mecánico'].includes(n)) return 'mecanico';
     if (['cliente', 'client'].includes(n)) return 'cliente';
+    if (['recepcionista', 'receptionist'].includes(n)) return 'recepcionista';
     return n;
   };
 
@@ -114,6 +115,7 @@ export const AuthProvider = ({ children }) => {
   const isChief = roleKey === 'jefe';
   const isMechanic = roleKey === 'mecanico';
   const isClient = roleKey === 'cliente';
+  const isRecepcionista = roleKey === 'recepcionista';
 
   const value = {
     user,
@@ -124,6 +126,7 @@ export const AuthProvider = ({ children }) => {
     isChief,
     isMechanic,
     isClient,
+    isRecepcionista,
     roleKey,
     login,
     register,

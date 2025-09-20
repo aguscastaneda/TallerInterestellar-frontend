@@ -1,9 +1,10 @@
-import { useState } from 'react';
+  import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
-import { Eye, EyeOff, Car, Wrench, User } from 'lucide-react';
+import { Button, Input, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './ui';
+import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -30,142 +31,167 @@ const Login = () => {
       } else {
         toast.error(result.message || 'Error en el login');
       }
-    } catch (error) {
+    } catch {
       toast.error('Error en el servidor');
     } finally {
       setIsLoading(false);
     }
   };
 
+
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="max-w-md w-full space-y-8">
-        {/* Header */}
-        <div className="text-center">
-          <div className="mx-auto h-16 w-16 bg-indigo-600 rounded-full flex items-center justify-center mb-4">
-            <img src="/logo.png" alt="Logo" className="h-25 w-25" />
-          </div>
-          <h2 className="text-3xl font-bold text-gray-900">
-            Taller Interestellar
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Sistema de Gestión Mecánica
-          </p>
-        </div>
-
-        {/* Formulario */}
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email
-              </label>
-              <div className="relative">
-                <input
-                  {...register('email', {
-                    required: 'El email es requerido',
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'Email inválido'
-                    }
-                  })}
-                  type="email"
-                  id="email"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="tu@email.com"
-                />
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50 flex items-center justify-center p-4">
+      <div className="max-w-4xl w-full">
+        <div className="grid lg:grid-cols-2 gap-8 items-center">
+          {/* Panel izquierdo - Información */}
+          <div className="hidden lg:block">
+            <div className="text-center">
+              <div className="mx-auto h-28 w-28 rounded-3xl bg-gradient-to-br from-white to-gray-50 shadow-2xl border-2 border-red-100 flex items-center justify-center mb-8 transform hover:scale-105 transition-transform duration-300">
+                <div className="p-2 rounded-2xl bg-white shadow-inner">
+                  <img src="/logo.png" alt="Logo" className="h-16 w-16 rounded-xl" />
+                </div>
               </div>
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Contraseña
-              </label>
-              <div className="relative">
-                <input
-                  {...register('password', {
-                    required: 'La contraseña es requerida',
-                    minLength: {
-                      value: 6,
-                      message: 'La contraseña debe tener al menos 6 caracteres'
-                    }
-                  })}
-                  type={showPassword ? 'text' : 'password'}
-                  id="password"
-                  className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="••••••••"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400" />
-                  )}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
-              )}
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
-            </button>
-          </form>
-
-          {/* Información adicional */}
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Usuarios de prueba</span>
-              </div>
-            </div>
-            
-            <div className="mt-4 space-y-2 text-xs text-gray-600">
-              <div className="flex items-center space-x-2">
-                <User className="h-4 w-4" />
-                <span>Admin: admin@taller.com / admin123</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Wrench className="h-4 w-4" />
-                <span>Mecánico: mecanico1@taller.com / mecanico123</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <User className="h-4 w-4" />
-                <span>Cliente: cliente1@email.com / cliente123</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <User className="h-4 w-4" />
-                <span>Jefe: jefe@taller.com / jefe123</span>
-              </div>
-            </div>
-
-            {/* Enlace al registro */}
-            <div className="mt-4 text-center">
-              <p className="text-sm text-gray-600">
-                ¿No tienes una cuenta?{' '}
-                <button
-                  onClick={() => navigate('/register')}
-                  className="font-medium text-indigo-600 hover:text-indigo-500"
-                >
-                  Regístrate aquí
-                </button>
+              <h1 className="text-5xl font-bold text-gray-900 mb-6">
+                Taller Interestellar
+              </h1>
+              <p className="text-xl text-gray-600 mb-8">
+                Sistema de Gestión Mecánica Moderno
               </p>
+              <div className="space-y-4">
+                <div className="flex items-center justify-center space-x-3 text-gray-600">
+                  <div className="h-2 w-2 bg-red-500 rounded-full"></div>
+                  <span>Gestión completa de vehículos</span>
+                </div>
+                <div className="flex items-center justify-center space-x-3 text-gray-600">
+                  <div className="h-2 w-2 bg-orange-500 rounded-full"></div>
+                  <span>Seguimiento en tiempo real</span>
+                </div>
+                <div className="flex items-center justify-center space-x-3 text-gray-600">
+                  <div className="h-2 w-2 bg-yellow-500 rounded-full"></div>
+                  <span>Comunicación directa con mecánicos</span>
+                </div>
+              </div>
             </div>
+          </div>
+
+          {/* Panel derecho - Formulario */}
+          <div className="w-full max-w-md mx-auto">
+            <Card className="shadow-strong">
+              <CardHeader className="text-center">
+                <div className="mx-auto h-20 w-20 rounded-2xl bg-gradient-to-br from-white to-gray-50 shadow-xl border-2 border-red-100 flex items-center justify-center mb-4 lg:hidden transform hover:scale-105 transition-transform duration-300">
+                  <div className="p-1 rounded-xl bg-white shadow-inner">
+                    <img src="/logo.png" alt="Logo" className="h-12 w-12 rounded-lg" />
+                  </div>
+                </div>
+                <CardTitle className="text-2xl font-bold text-gray-900">
+                  Iniciar Sesión
+                </CardTitle>
+                <CardDescription>
+                  Accede a tu cuenta para gestionar tu taller
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent>
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                      Email
+                    </label>
+                    <Input
+                      {...register('email', {
+                        required: 'El email es requerido',
+                        pattern: {
+                          value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                          message: 'Email inválido'
+                        }
+                      })}
+                      type="email"
+                      id="email"
+                      placeholder="tu@email.com"
+                      error={!!errors.email}
+                    />
+                    {errors.email && (
+                      <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                      Contraseña
+                    </label>
+                    <Input
+                      {...register('password', {
+                        required: 'La contraseña es requerida',
+                        minLength: {
+                          value: 6,
+                          message: 'La contraseña debe tener al menos 6 caracteres'
+                        }
+                      })}
+                      type={showPassword ? 'text' : 'password'}
+                      id="password"
+                      placeholder="••••••••"
+                      rightIcon={
+                        <button
+                          type="button"
+                          onClick={() => {
+                            console.log('Toggle clicked, current state:', showPassword);
+                            setShowPassword(!showPassword);
+                          }}
+                          className="text-gray-600 hover:text-gray-800 transition-colors duration-200 focus:outline-none p-1 rounded"
+                          aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </button>
+                      }
+                      error={!!errors.password}
+                    />
+                    {errors.password && (
+                      <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                    )}
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    loading={isLoading}
+                    className="w-full"
+                    size="lg"
+                    rightIcon={<ArrowRight className="h-4 w-4" />}
+                  >
+                    {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+                  </Button>
+                </form>
+              </CardContent>
+
+              <CardFooter className="flex-col space-y-4">
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/forgot-password')}
+                    className="text-sm text-red-600 hover:text-red-500 transition-colors duration-200 font-medium mb-3"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </button>
+                </div>
+                
+                <div className="text-center">
+                  <p className="text-sm text-gray-600">
+                    ¿No tienes una cuenta?{' '}
+                    <button
+                      onClick={() => navigate('/register')}
+                      className="font-medium text-red-600 hover:text-red-500 transition-colors duration-200"
+                    >
+                      Regístrate aquí
+                    </button>
+                  </p>
+                </div>
+              </CardFooter>
+            </Card>
           </div>
         </div>
       </div>

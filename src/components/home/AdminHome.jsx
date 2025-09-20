@@ -2,16 +2,21 @@ import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import NavBar from '../NavBar';
 import { useAuth } from '../../contexts/AuthContext';
+import { useConfig } from '../../contexts/ConfigContext';
 import { carsService, usersService } from '../../services/api';
+import { Button, Card, CardContent, Badge, Input, Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter, SegmentedControl } from '../ui';
+import { User, Users, Wrench, Shield, Eye, Edit, Trash2, Plus, Mail, Phone, Calendar, CheckCircle, XCircle, Car } from 'lucide-react';
 
 const AdminHome = () => {
   const { user } = useAuth();
+  const { config } = useConfig();
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState('clientes');
   const [searchResult, setSearchResult] = useState(null);
   const [users, setUsers] = useState([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
+  const [showUserDetails, setShowUserDetails] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
   const [createForm, setCreateForm] = useState({
     name: '',
@@ -31,12 +36,16 @@ const AdminHome = () => {
 
   // Determinar el roleId basado en la pestaña activa
   const getRoleIdForActiveTab = () => {
-    switch (activeTab) {
-      case 'clientes': return 1;
-      case 'mecanicos': return 2;
-      case 'jefes': return 3;
-      default: return 1;
-    }
+    const roleMap = {
+      'clientes': 'CLIENT',
+      'mecanicos': 'MECHANIC', 
+      'jefes': 'BOSS',
+      'admins': 'ADMIN',
+      'recepcionistas': 'RECEPTIONIST'
+    };
+    const roleKey = roleMap[activeTab];
+    const role = config.roles.find(r => r.name.toLowerCase() === roleKey?.toLowerCase());
+    return role?.id || 1;
   };
 
   const loadUsers = async () => {
@@ -164,231 +173,438 @@ const AdminHome = () => {
   };
 
   const handleHistoryClick = () => {
-    // TODO: Implementar historial completo de arreglos
-    toast.success('Funcionalidad de historial en desarrollo');
+    // Admin doesn't need repairs history - different functionality
+    toast.info('Panel de administración - Sin historial de reparaciones');
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <NavBar roleBadge={'Admin'} showHistory={true} onHistoryClick={handleHistoryClick} />
-      <div className="max-w-6xl mx-auto p-4">
-        {/* Barra de búsqueda */}
-        <div className="mt-6">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="w-full border p-2 rounded"
-            placeholder="Buscar por patente"
-          />
-          <div className="mt-2">
-            <button onClick={doSearch} className="px-3 py-2 rounded bg-indigo-600 text-white">
-              Buscar
-            </button>
-          </div>
-          <p className="text-sm text-gray-500 mt-1">Ingrese una patente exacta para buscar.</p>
-          {searchResult && (
-            <div className="mt-3 bg-white p-3 rounded shadow text-sm">
-              <p className="font-medium">{searchResult.licensePlate} - {searchResult.brand} {searchResult.model}</p>
-              <p>Cliente: {searchResult.client?.user?.name} {searchResult.client?.user?.lastName}</p>
-            </div>
-          )}
+    <div className="min-h-screen bg-gray-50">
+      <NavBar roleBadge={true} showHistory={false} />
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Panel de Administración
+          </h1>
+          <p className="text-gray-600">
+            Gestiona usuarios del sistema y busca vehículos
+          </p>
         </div>
 
-        {/* Tabs de gestión */}
-        <div className="mt-6 flex space-x-2">
-          {['clientes', 'mecanicos', 'jefes'].map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 rounded border ${
-                activeTab === tab ? 'bg-indigo-600 text-white' : 'bg-white'
-              }`}
-            >
-              {tab === 'clientes' && 'Clientes'}
-              {tab === 'mecanicos' && 'Mecánicos'}
-              {tab === 'jefes' && 'Jefes de Mecánicos'}
-            </button>
-          ))}
-        </div>
-
-        {/* Botón crear usuario */}
-        <div className="mt-4 flex justify-end">
-          <button
-            onClick={() => setShowCreateForm(true)}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-          >
-            Crear {activeTab === 'clientes' ? 'Cliente' : activeTab === 'mecanicos' ? 'Mecánico' : 'Jefe de Mecánicos'}
-          </button>
-        </div>
-
-        {/* Formulario de creación */}
-        {showCreateForm && (
-          <div className="mt-4 bg-white p-6 rounded shadow">
-            <h3 className="text-lg font-semibold mb-4">
-              Crear {activeTab === 'clientes' ? 'Cliente' : activeTab === 'mecanicos' ? 'Mecánico' : 'Jefe de Mecánicos'}
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input
-                value={createForm.name}
-                onChange={(e) => setCreateForm({...createForm, name: e.target.value})}
-                className="border p-2 rounded"
-                placeholder="Nombre"
-              />
-              <input
-                value={createForm.lastName}
-                onChange={(e) => setCreateForm({...createForm, lastName: e.target.value})}
-                className="border p-2 rounded"
-                placeholder="Apellido"
-              />
-              <input
-                value={createForm.cuil}
-                onChange={(e) => setCreateForm({...createForm, cuil: e.target.value})}
-                className="border p-2 rounded"
-                placeholder="CUIL"
-              />
-              <input
-                value={createForm.email}
-                onChange={(e) => setCreateForm({...createForm, email: e.target.value})}
-                className="border p-2 rounded"
-                placeholder="Email"
-                type="email"
-              />
-              <input
-                value={createForm.password}
-                onChange={(e) => setCreateForm({...createForm, password: e.target.value})}
-                className="border p-2 rounded"
-                placeholder="Contraseña"
-                type="password"
-              />
-            </div>
-            <div className="mt-4 flex justify-end space-x-2">
-              <button
-                onClick={() => setShowCreateForm(false)}
-                className="px-4 py-2 border rounded hover:bg-gray-50"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleCreateUser}
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-              >
-                Crear
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Formulario de edición */}
-        {showEditForm && (
-          <div className="bg-white p-4 rounded shadow mb-4">
-            <h3 className="text-lg font-semibold mb-4">Editar {getRoleName(editingUser)}</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input
-                value={editForm.name}
-                onChange={(e) => setEditForm({...editForm, name: e.target.value})}
-                className="border p-2 rounded"
-                placeholder="Nombre"
-              />
-              <input
-                value={editForm.lastName}
-                onChange={(e) => setEditForm({...editForm, lastName: e.target.value})}
-                className="border p-2 rounded"
-                placeholder="Apellido"
-              />
-              <input
-                value={editForm.cuil}
-                onChange={(e) => setEditForm({...editForm, cuil: e.target.value})}
-                className="border p-2 rounded"
-                placeholder="CUIL"
-              />
-              <input
-                value={editForm.email}
-                onChange={(e) => setEditForm({...editForm, email: e.target.value})}
-                className="border p-2 rounded"
-                placeholder="Email"
-                type="email"
-              />
-              <input
-                value={editForm.password}
-                onChange={(e) => setEditForm({...editForm, password: e.target.value})}
-                className="border p-2 rounded"
-                placeholder="Nueva contraseña (opcional)"
-                type="password"
-              />
-            </div>
-            <div className="mt-4 flex justify-end space-x-2">
-              <button
-                onClick={() => {
-                  setShowEditForm(false);
-                  setEditingUser(null);
-                }}
-                className="px-4 py-2 border rounded hover:bg-gray-50"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleUpdateUser}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Actualizar
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Lista de usuarios */}
-        <div className="mt-6 space-y-3">
-          {getUsersByRole(
-            activeTab === 'clientes' ? 1 : 
-            activeTab === 'mecanicos' ? 2 : 3
-          ).map((userItem) => (
-            <div key={userItem.id} className="bg-white p-4 rounded shadow">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">{userItem.name} {userItem.lastName}</p>
-                  <p className="text-sm text-gray-500">{userItem.email}</p>
-                  {!userItem.active && (
-                    <p className="text-xs text-red-500 font-medium">Usuario inactivo</p>
-                  )}
-                </div>
-                <div className="flex space-x-2">
-                  <details>
-                    <summary className="px-3 py-1 rounded border cursor-pointer hover:bg-gray-50">
-                      Ver
-                    </summary>
-                    <div className="mt-2 p-3 bg-gray-50 rounded text-sm">
-                      <p><strong>Email:</strong> {userItem.email}</p>
-                      <p><strong>CUIL:</strong> {userItem.cuil || 'No especificado'}</p>
-                      <p><strong>Teléfono:</strong> {userItem.phone || 'No especificado'}</p>
-                      <p><strong>Estado:</strong> {userItem.active ? 'Activo' : 'Inactivo'}</p>
-                      <p><strong>Fecha de creación:</strong> {new Date(userItem.createdAt).toLocaleDateString()}</p>
-                    </div>
-                  </details>
-                  <button
-                    onClick={() => handleEditUser(userItem)}
-                    className="px-3 py-1 rounded border hover:bg-blue-50 text-blue-600"
+        {/* Búsqueda de vehículos */}
+        <Card className="mb-8">
+          <CardContent className="p-8">
+            <div className="flex items-center justify-center">
+              <div className="w-full max-w-xl">
+                <h2 className="text-center text-2xl font-semibold text-gray-900 mb-6">
+                  Buscar Vehículo
+                </h2>
+                <div className="flex">
+                  <input
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Ingresa la patente del vehículo"
+                    className="flex-1 px-4 py-2 h-11 rounded-l-lg border border-gray-400 focus:outline-none focus:ring-2 focus:ring-red-600 text-black"
+                  />
+                  <button 
+                    onClick={doSearch}
+                    className="px-6 h-11 bg-red-600 text-white font-medium rounded-r-lg hover:bg-red-700 transition"
                   >
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => handleDeleteUser(userItem.id)}
-                    className="px-3 py-1 rounded border hover:bg-red-50 text-red-600"
-                  >
-                    {userItem.active ? 'Desactivar' : 'Activar'}
+                    Buscar
                   </button>
                 </div>
               </div>
             </div>
-          ))}
+            
+            {searchResult && (
+              <Card className="mt-6 bg-green-50 border-green-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex-shrink-0">
+                      <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                        <Car className="h-6 w-6 text-green-600" />
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900">
+                        {searchResult.licensePlate} - {searchResult.brand} {searchResult.model}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Cliente: {searchResult.client?.user?.name} {searchResult.client?.user?.lastName}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Navegación por pestañas */}
+        <div className="mb-8">
+          <SegmentedControl
+            options={[
+              {
+                value: 'clientes',
+                label: 'Clientes',
+                icon: <User className="h-4 w-4" />,
+                count: getUsersByRole(1).length
+              },
+              {
+                value: 'mecanicos',
+                label: 'Mecánicos',
+                icon: <Wrench className="h-4 w-4" />,
+                count: getUsersByRole(2).length
+              },
+              {
+                value: 'jefes',
+                label: 'Jefes de Mecánicos',
+                icon: <Users className="h-4 w-4" />,
+                count: getUsersByRole(3).length
+              }
+            ]}
+            value={activeTab}
+            onChange={setActiveTab}
+            size="lg"
+          />
         </div>
 
-        {getUsersByRole(
-          activeTab === 'clientes' ? 1 : 
-          activeTab === 'mecanicos' ? 2 : 3
-        ).length === 0 && (
-          <div className="mt-6 text-center text-gray-500">
-            <p>No hay {activeTab} registrados</p>
-          </div>
+        {/* Botón crear usuario */}
+        <div className="flex justify-end mb-6">
+          <Button
+            onClick={() => setShowCreateForm(true)}
+            variant="primary"
+            leftIcon={<Plus className="h-4 w-4" />}
+          >
+            Crear {activeTab === 'clientes' ? 'Cliente' : activeTab === 'mecanicos' ? 'Mecánico' : 'Jefe de Mecánicos'}
+          </Button>
+        </div>
+
+        {/* Formulario de creación */}
+        {showCreateForm && (
+          <Modal isOpen={showCreateForm} onClose={() => setShowCreateForm(false)}>
+            <ModalHeader>
+              <ModalTitle>
+                Crear {activeTab === 'clientes' ? 'Cliente' : activeTab === 'mecanicos' ? 'Mecánico' : 'Jefe de Mecánicos'}
+              </ModalTitle>
+            </ModalHeader>
+            <ModalContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  value={createForm.name}
+                  onChange={(e) => setCreateForm({...createForm, name: e.target.value})}
+                  placeholder="Nombre"
+                  label="Nombre"
+                />
+                <Input
+                  value={createForm.lastName}
+                  onChange={(e) => setCreateForm({...createForm, lastName: e.target.value})}
+                  placeholder="Apellido"
+                  label="Apellido"
+                />
+                <Input
+                  value={createForm.cuil}
+                  onChange={(e) => setCreateForm({...createForm, cuil: e.target.value})}
+                  placeholder="CUIL"
+                  label="CUIL"
+                  leftIcon={<Shield className="h-4 w-4" />}
+                />
+                <Input
+                  value={createForm.email}
+                  onChange={(e) => setCreateForm({...createForm, email: e.target.value})}
+                  placeholder="Email"
+                  type="email"
+                  label="Email"
+                  leftIcon={<Mail className="h-4 w-4" />}
+                />
+                <Input
+                  value={createForm.password}
+                  onChange={(e) => setCreateForm({...createForm, password: e.target.value})}
+                  placeholder="Contraseña"
+                  type="password"
+                  label="Contraseña"
+                />
+              </div>
+            </ModalContent>
+            <ModalFooter>
+              <Button
+                onClick={() => setShowCreateForm(false)}
+                variant="ghost"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleCreateUser}
+                variant="primary"
+              >
+                Crear
+              </Button>
+            </ModalFooter>
+          </Modal>
+        )}
+
+        {/* Formulario de edición */}
+        {showEditForm && (
+          <Modal isOpen={showEditForm} onClose={() => {
+            setShowEditForm(false);
+            setEditingUser(null);
+          }}>
+            <ModalHeader>
+              <ModalTitle>Editar {getRoleName(editingUser)}</ModalTitle>
+            </ModalHeader>
+            <ModalContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                  placeholder="Nombre"
+                  label="Nombre"
+                />
+                <Input
+                  value={editForm.lastName}
+                  onChange={(e) => setEditForm({...editForm, lastName: e.target.value})}
+                  placeholder="Apellido"
+                  label="Apellido"
+                />
+                <Input
+                  value={editForm.cuil}
+                  onChange={(e) => setEditForm({...editForm, cuil: e.target.value})}
+                  placeholder="CUIL"
+                  label="CUIL"
+                  leftIcon={<Shield className="h-4 w-4" />}
+                />
+                <Input
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+                  placeholder="Email"
+                  type="email"
+                  label="Email"
+                  leftIcon={<Mail className="h-4 w-4" />}
+                />
+                <Input
+                  value={editForm.password}
+                  onChange={(e) => setEditForm({...editForm, password: e.target.value})}
+                  placeholder="Nueva contraseña (opcional)"
+                  type="password"
+                  label="Nueva contraseña"
+                />
+              </div>
+            </ModalContent>
+            <ModalFooter>
+              <Button
+                onClick={() => {
+                  setShowEditForm(false);
+                  setEditingUser(null);
+                }}
+                variant="ghost"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleUpdateUser}
+                variant="primary"
+              >
+                Actualizar
+              </Button>
+            </ModalFooter>
+          </Modal>
+        )}
+
+        {/* Lista de usuarios */}
+        <div className="space-y-4">
+          {getUsersByRole(
+            activeTab === 'clientes' ? 1 : 
+            activeTab === 'mecanicos' ? 2 : 3
+          ).length === 0 ? (
+            <Card className="text-center py-12">
+              <CardContent>
+                <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No hay {activeTab} registrados
+                </h3>
+                <p className="text-gray-600">
+                  Crea el primer {activeTab === 'clientes' ? 'cliente' : activeTab === 'mecanicos' ? 'mecánico' : 'jefe de mecánicos'} para comenzar
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            getUsersByRole(
+              activeTab === 'clientes' ? 1 : 
+              activeTab === 'mecanicos' ? 2 : 3
+            ).map((userItem) => (
+              <Card key={userItem.id} className="card-hover">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex-shrink-0">
+                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                          userItem.active ? 'bg-green-100' : 'bg-red-100'
+                        }`}>
+                          <User className={`h-6 w-6 ${
+                            userItem.active ? 'text-green-600' : 'text-red-600'
+                          }`} />
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900">
+                          {userItem.name} {userItem.lastName}
+                        </h3>
+                        <p className="text-sm text-gray-600 flex items-center space-x-2">
+                          <Mail className="h-4 w-4" />
+                          <span>{userItem.email}</span>
+                        </p>
+                        <div className="flex items-center space-x-4 mt-2">
+                          <Badge variant={userItem.active ? 'success' : 'danger'}>
+                            {userItem.active ? 'Activo' : 'Inactivo'}
+                          </Badge>
+                          <span className="text-sm text-gray-500">
+                            {getRoleName(userItem)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        onClick={() => setShowUserDetails(userItem)}
+                        variant="ghost"
+                        size="sm"
+                        leftIcon={<Eye className="h-4 w-4" />}
+                      >
+                        Ver
+                      </Button>
+                      <Button
+                        onClick={() => handleEditUser(userItem)}
+                        variant="ghost"
+                        size="sm"
+                        leftIcon={<Edit className="h-4 w-4" />}
+                      >
+                        Editar
+                      </Button>
+                      <Button
+                        onClick={() => handleDeleteUser(userItem.id)}
+                        variant="ghost"
+                        size="sm"
+                        leftIcon={<Trash2 className="h-4 w-4" />}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        {userItem.active ? 'Desactivar' : 'Activar'}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+
+        {/* Modal de detalles de usuario */}
+        {showUserDetails && (
+          <Modal isOpen={!!showUserDetails} onClose={() => setShowUserDetails(null)}>
+            <ModalHeader>
+              <ModalTitle>
+                Detalles de {getRoleName(showUserDetails)}
+              </ModalTitle>
+            </ModalHeader>
+            <ModalContent>
+              <div className="space-y-6">
+                <div className="flex items-center space-x-4">
+                  <div className={`w-16 h-16 rounded-lg flex items-center justify-center ${
+                    showUserDetails.active ? 'bg-green-100' : 'bg-red-100'
+                  }`}>
+                    <User className={`h-8 w-8 ${
+                      showUserDetails.active ? 'text-green-600' : 'text-red-600'
+                    }`} />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900">
+                      {showUserDetails.name} {showUserDetails.lastName}
+                    </h3>
+                    <p className="text-gray-600">{getRoleName(showUserDetails)}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-3">
+                      <Mail className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Email</p>
+                        <p className="text-gray-900">{showUserDetails.email}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-3">
+                      <Shield className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">CUIL</p>
+                        <p className="text-gray-900">{showUserDetails.cuil || 'No especificado'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-3">
+                      <Phone className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Teléfono</p>
+                        <p className="text-gray-900">{showUserDetails.phone || 'No especificado'}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-3">
+                      <Calendar className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Fecha de creación</p>
+                        <p className="text-gray-900">
+                          {new Date(showUserDetails.createdAt).toLocaleDateString('es-ES', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t">
+                  <div className="flex items-center space-x-3">
+                    {showUserDetails.active ? (
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                    ) : (
+                      <XCircle className="h-5 w-5 text-red-500" />
+                    )}
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Estado</p>
+                      <Badge variant={showUserDetails.active ? 'success' : 'danger'}>
+                        {showUserDetails.active ? 'Usuario Activo' : 'Usuario Inactivo'}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </ModalContent>
+            <ModalFooter>
+              <Button
+                onClick={() => setShowUserDetails(null)}
+                variant="ghost"
+              >
+                Cerrar
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowUserDetails(null);
+                  handleEditUser(showUserDetails);
+                }}
+                variant="primary"
+                leftIcon={<Edit className="h-4 w-4" />}
+              >
+                Editar Usuario
+              </Button>
+            </ModalFooter>
+          </Modal>
         )}
       </div>
     </div>

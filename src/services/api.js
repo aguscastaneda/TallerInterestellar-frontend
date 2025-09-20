@@ -88,6 +88,7 @@ export const paymentsService = {
   getByRepair: (repairId) => api.get(`/payments/repair/${repairId}`),
   getByClient: (clientId) => api.get(`/payments/client/${clientId}`),
   getByStatus: (status) => api.get(`/payments/status/${status}`),
+  createMercadoPagoPreference: (repairId, clientId) => api.post('/payments/create-preference', { repairId, clientId }),
 };
 
 export const requestsService = {
@@ -97,6 +98,26 @@ export const requestsService = {
   getByClient: (clientId) => api.get(`/requests/client/${clientId}`),
   assignMechanic: (id, mechanicId) => api.put(`/requests/${id}/assign`, { mechanicId }),
   updateStatus: (id, data) => api.put(`/requests/${id}/status`, data),
+};
+
+export const carStatesService = {
+  transition: (carId, newStatusId, description) => api.post('/car-states/transition', { carId, newStatusId, description }),
+  getStatuses: () => api.get('/car-states/statuses'),
+  acceptBudget: (carId) => api.post('/car-states/accept-budget', { carId }),
+  rejectBudget: (carId) => api.post('/car-states/reject-budget', { carId }),
+  finishRepair: (carId, finalDescription, finalCost) => api.post('/car-states/finish-repair', { carId, finalDescription, finalCost }),
+  deliverCar: (carId) => api.post('/car-states/deliver-car', { carId }),
+};
+
+export const clientRepairsService = {
+  getRepairs: (clientId) => api.get(`/client-repairs/${clientId}`),
+  getRepairsByStatus: (clientId, statusId) => api.get(`/client-repairs/${clientId}/status/${statusId}`),
+};
+
+export const configService = {
+  getSystemConfig: () => api.get('/config/system'),
+  getRoles: () => api.get('/config/roles'),
+  getCarStatuses: () => api.get('/config/car-statuses'),
 };
 
 export default api;

@@ -2,14 +2,17 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
+import { useConfig } from '../contexts/ConfigContext';
 import { toast } from 'react-hot-toast';
-import { Eye, EyeOff, Car, User, Mail, Phone, Building, ArrowLeft } from 'lucide-react';
+import { Button, Input, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './ui';
+import { Eye, EyeOff, User, Mail, Phone, Building, ArrowLeft, ArrowRight } from 'lucide-react';
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { register: registerUser } = useAuth();
+  const { config } = useConfig();
   const navigate = useNavigate();
 
   const {
@@ -36,7 +39,7 @@ const Register = () => {
         password: data.password,
         phone: data.phone,
         cuil: data.cuil,
-        roleId: 1 // Rol fijo: Cliente
+        roleId: config.roles.find(r => r.name.toLowerCase() === 'cliente')?.id || 1
       });
 
       if (result.success) {
@@ -45,251 +48,293 @@ const Register = () => {
       } else {
         toast.error(result.message || 'Error en el registro');
       }
-    } catch (error) {
+    } catch {
       toast.error('Error en el servidor');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleBackToLogin = () => {
-    navigate('/login');
-  };
+
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full space-y-8">
-        {/* Header */}
-        <div className="text-center">
-          <div className="mx-auto h-16 w-16 bg-indigo-600 rounded-full flex items-center justify-center mb-4">
-            <Car className="h-8 w-8 text-white" />
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50 flex items-center justify-center p-4">
+      <div className="max-w-5xl w-full">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+          {/* Panel izquierdo - Información */}
+          <div className="hidden lg:block">
+            <div className="text-center">
+              <div className="mx-auto h-32 w-32 rounded-3xl bg-gradient-to-br from-white to-gray-50 shadow-2xl border-2 border-red-100 flex items-center justify-center mb-8 transform hover:scale-105 transition-transform duration-300">
+                <div className="p-2 rounded-2xl bg-white shadow-inner">
+                  <img src="/logo.png" alt="Logo" className="h-20 w-20 rounded-xl" />
+                </div>
+              </div>
+              <h1 className="text-5xl font-bold text-gray-900 mb-6">
+                Taller Interestellar
+              </h1>
+              <p className="text-xl text-gray-600 mb-8">
+                Sistema de Gestión Mecánica Moderno
+              </p>
+              <div className="space-y-4">
+                <div className="flex items-center justify-center space-x-3 text-gray-600">
+                  <div className="h-2 w-2 bg-red-500 rounded-full"></div>
+                  <span>Seguimiento en tiempo real de reparaciones</span>
+                </div>
+                <div className="flex items-center justify-center space-x-3 text-gray-600">
+                  <div className="h-2 w-2 bg-orange-500 rounded-full"></div>
+                  <span>Comunicación directa con mecánicos</span>
+                </div>
+                <div className="flex items-center justify-center space-x-3 text-gray-600">
+                  <div className="h-2 w-2 bg-yellow-500 rounded-full"></div>
+                  <span>Historial completo de servicios</span>
+                </div>
+                <div className="flex items-center justify-center space-x-3 text-gray-600">
+                  <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                  <span>Cotizaciones transparentes</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <h2 className="text-3xl font-bold text-gray-900">
-            Taller Interestelar
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Registro de Nuevo Cliente
-          </p>
-        </div>
 
-        {/* Formulario */}
-        <div className="bg-white rounded-lg shadow-lg p-8">
-
-
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Información Personal */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                  <User className="h-4 w-4 inline mr-2" />
-                  Nombre
-                </label>
-                <input
-                  {...register('name', {
-                    required: 'El nombre es requerido',
-                    minLength: {
-                      value: 2,
-                      message: 'El nombre debe tener al menos 2 caracteres'
-                    }
-                  })}
-                  type="text"
-                  id="name"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="Tu nombre"
-                />
-                {errors.name && (
-                  <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
-                  <User className="h-4 w-4 inline mr-2" />
-                  Apellido
-                </label>
-                <input
-                  {...register('lastName', {
-                    required: 'El apellido es requerido',
-                    minLength: {
-                      value: 2,
-                      message: 'El apellido debe tener al menos 2 caracteres'
-                    }
-                  })}
-                  type="text"
-                  id="lastName"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="Tu apellido"
-                />
-                {errors.lastName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.lastName.message}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Email y Teléfono */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  <Mail className="h-4 w-4 inline mr-2" />
-                  Email
-                </label>
-                <input
-                  {...register('email', {
-                    required: 'El email es requerido',
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'Email inválido'
-                    }
-                  })}
-                  type="email"
-                  id="email"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="tu@email.com"
-                />
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                  <Phone className="h-4 w-4 inline mr-2" />
-                  Teléfono
-                </label>
-                <input
-                  {...register('phone', {
-                    required: 'El teléfono es requerido',
-                    pattern: {
-                      value: /^[0-9+\-\s()]+$/,
-                      message: 'Formato de teléfono inválido'
-                    }
-                  })}
-                  type="tel"
-                  id="phone"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="+54 11 1234-5678"
-                />
-                {errors.phone && (
-                  <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
-                )}
-              </div>
-            </div>
-
-            {/* CUIL */}
-            <div>
-              <label htmlFor="cuil" className="block text-sm font-medium text-gray-700 mb-2">
-                <Building className="h-4 w-4 inline mr-2" />
-                CUIL
-              </label>
-              <input
-                {...register('cuil', {
-                  required: 'El CUIL es requerido',
-                  pattern: {
-                    value: /^[0-9]{2}-[0-9]{8}-[0-9]$/,
-                    message: 'Formato de CUIL inválido (XX-XXXXXXXX-X)'
-                  }
-                })}
-                type="text"
-                id="cuil"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="20-12345678-9"
-              />
-              {errors.cuil && (
-                <p className="mt-1 text-sm text-red-600">{errors.cuil.message}</p>
-              )}
-            </div>
-
-            {/* Contraseñas */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  Contraseña
-                </label>
-                <div className="relative">
-                  <input
-                    {...register('password', {
-                      required: 'La contraseña es requerida',
-                      minLength: {
-                        value: 6,
-                        message: 'La contraseña debe tener al menos 6 caracteres'
-                      }
-                    })}
-                    type={showPassword ? 'text' : 'password'}
-                    id="password"
-                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="••••••••"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-5 w-5 text-gray-400" />
-                    ) : (
-                      <Eye className="h-5 w-5 text-gray-400" />
-                    )}
-                  </button>
+          {/* Panel derecho - Formulario */}
+          <div className="w-full max-w-lg mx-auto">
+            <Card className="shadow-strong">
+              <CardHeader className="text-center">
+                <div className="mx-auto h-20 w-20 rounded-2xl bg-gradient-to-br from-white to-gray-50 shadow-xl border-2 border-red-100 flex items-center justify-center mb-4 lg:hidden transform hover:scale-105 transition-transform duration-300">
+                  <div className="p-1 rounded-xl bg-white shadow-inner">
+                    <img src="/logo.png" alt="Logo" className="h-12 w-12 rounded-lg" />
+                  </div>
                 </div>
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
-                )}
-              </div>
+                <CardTitle className="text-2xl font-bold text-gray-900">
+                  Crear Cuenta
+                </CardTitle>
+                <CardDescription>
+                  Completa tus datos para registrarte como cliente
+                </CardDescription>
+              </CardHeader>
 
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                  Confirmar Contraseña
-                </label>
-                <div className="relative">
-                  <input
-                    {...register('confirmPassword', {
-                      required: 'Confirma tu contraseña',
-                      validate: value => value === password || 'Las contraseñas no coinciden'
-                    })}
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    id="confirmPassword"
-                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="••••••••"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="h-5 w-5 text-gray-400" />
-                    ) : (
-                      <Eye className="h-5 w-5 text-gray-400" />
+              <CardContent>
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                  {/* Información Personal */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                        Nombre
+                      </label>
+                      <Input
+                        {...register('name', {
+                          required: 'El nombre es requerido',
+                          minLength: {
+                            value: 2,
+                            message: 'El nombre debe tener al menos 2 caracteres'
+                          }
+                        })}
+                        type="text"
+                        id="name"
+                        placeholder="Tu nombre"
+                        leftIcon={<User className="h-4 w-4" />}
+                        error={!!errors.name}
+                      />
+                      {errors.name && (
+                        <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+                        Apellido
+                      </label>
+                      <Input
+                        {...register('lastName', {
+                          required: 'El apellido es requerido',
+                          minLength: {
+                            value: 2,
+                            message: 'El apellido debe tener al menos 2 caracteres'
+                          }
+                        })}
+                        type="text"
+                        id="lastName"
+                        placeholder="Tu apellido"
+                        leftIcon={<User className="h-4 w-4" />}
+                        error={!!errors.lastName}
+                      />
+                      {errors.lastName && (
+                        <p className="mt-1 text-sm text-red-600">{errors.lastName.message}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Email y Teléfono */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                        Email
+                      </label>
+                      <Input
+                        {...register('email', {
+                          required: 'El email es requerido',
+                          pattern: {
+                            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                            message: 'Email inválido'
+                          }
+                        })}
+                        type="email"
+                        id="email"
+                        placeholder="tu@email.com"
+                        leftIcon={<Mail className="h-4 w-4" />}
+                        error={!!errors.email}
+                      />
+                      {errors.email && (
+                        <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                        Teléfono
+                      </label>
+                      <Input
+                        {...register('phone', {
+                          required: 'El teléfono es requerido',
+                          pattern: {
+                            value: /^[0-9+\-\s()]+$/,
+                            message: 'Formato de teléfono inválido'
+                          }
+                        })}
+                        type="tel"
+                        id="phone"
+                        placeholder="+54 11 1234-5678"
+                        leftIcon={<Phone className="h-4 w-4" />}
+                        error={!!errors.phone}
+                      />
+                      {errors.phone && (
+                        <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* CUIL */}
+                  <div>
+                    <label htmlFor="cuil" className="block text-sm font-medium text-gray-700 mb-2">
+                      CUIL
+                    </label>
+                    <Input
+                      {...register('cuil', {
+                        required: 'El CUIL es requerido',
+                        pattern: {
+                          value: /^[0-9]{2}-[0-9]{8}-[0-9]$/,
+                          message: 'Formato de CUIL inválido (XX-XXXXXXXX-X)'
+                        }
+                      })}
+                      type="text"
+                      id="cuil"
+                      placeholder="20-12345678-9"
+                      leftIcon={<Building className="h-4 w-4" />}
+                      error={!!errors.cuil}
+                    />
+                    {errors.cuil && (
+                      <p className="mt-1 text-sm text-red-600">{errors.cuil.message}</p>
                     )}
-                  </button>
+                  </div>
+
+                  {/* Contraseñas */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                        Contraseña
+                      </label>
+                      <Input
+                        {...register('password', {
+                          required: 'La contraseña es requerida',
+                          minLength: {
+                            value: 6,
+                            message: 'La contraseña debe tener al menos 6 caracteres'
+                          }
+                        })}
+                        type={showPassword ? 'text' : 'password'}
+                        id="password"
+                        placeholder="••••••••"
+                        rightIcon={
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="text-gray-400 hover:text-gray-600 transition-colors"
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </button>
+                        }
+                        error={!!errors.password}
+                      />
+                      {errors.password && (
+                        <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                        Confirmar Contraseña
+                      </label>
+                      <Input
+                        {...register('confirmPassword', {
+                          required: 'Confirma tu contraseña',
+                          validate: value => value === password || 'Las contraseñas no coinciden'
+                        })}
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        id="confirmPassword"
+                        placeholder="••••••••"
+                        rightIcon={
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="text-gray-400 hover:text-gray-600 transition-colors"
+                          >
+                            {showConfirmPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </button>
+                        }
+                        error={!!errors.confirmPassword}
+                      />
+                      {errors.confirmPassword && (
+                        <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    loading={isLoading}
+                    className="w-full"
+                    size="lg"
+                    rightIcon={<ArrowRight className="h-4 w-4" />}
+                  >
+                    {isLoading ? 'Registrando...' : 'Crear Cuenta'}
+                  </Button>
+                </form>
+              </CardContent>
+
+              <CardFooter className="flex-col space-y-4">
+                <div className="text-center">
+                  <p className="text-sm text-gray-600">
+                    ¿Ya tienes una cuenta?{' '}
+                    <button
+                      onClick={() => navigate('/login')}
+                      className="font-medium text-red-600 hover:text-red-500 transition-colors duration-200 flex items-center justify-center space-x-1"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      <span>Inicia sesión aquí</span>
+                    </button>
+                  </p>
                 </div>
-                {errors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Botón de Registro */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Registrando...' : 'Registrarse'}
-            </button>
-          </form>
-
-          {/* Enlace al Login */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              ¿Ya tienes una cuenta?{' '}
-              <button
-                onClick={handleBackToLogin}
-                className="font-medium text-indigo-600 hover:text-indigo-500"
-              >
-                Inicia sesión aquí
-              </button>
-            </p>
+              </CardFooter>
+            </Card>
           </div>
         </div>
       </div>
