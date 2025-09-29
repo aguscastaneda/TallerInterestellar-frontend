@@ -1,8 +1,9 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ConfigProvider } from './contexts/ConfigContext';
 import { Toaster } from 'react-hot-toast';
+import { setNavigateFunction } from './services/api';
 import Login from './components/Login';
 import Register from './components/Register';
 import ForgotPassword from './components/ForgotPassword';
@@ -21,6 +22,8 @@ import AdminHistorial from './components/home/AdminHistorial';
 import ClientRepairs from './components/home/ClientRepairs';
 import MechanicRepairs from './components/home/MechanicRepairs';
 import UserConfiguration from './components/UserConfiguration';
+import AcceptBudget from './components/home/AcceptBudget';
+import RejectBudget from './components/home/RejectBudget';
 
 // Componente para proteger rutas
 const ProtectedRoute = ({ children }) => {
@@ -78,6 +81,16 @@ const RoleHomeRedirect = () => {
   };
   const target = map[roleKey] || '/home/cliente';
   return <Navigate to={target} replace />;
+};
+
+// Component to set the navigate function for API
+const NavigateSetter = () => {
+  const navigate = useNavigate();
+  
+  // Set the navigate function for API interceptors
+  setNavigateFunction(navigate);
+  
+  return null; // This component doesn't render anything
 };
 
 const AppRoutes = () => {
@@ -231,6 +244,22 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route 
+        path="/accept-budget" 
+        element={
+          <ProtectedRoute>
+            <AcceptBudget />
+          </ProtectedRoute>
+        }
+      />
+      <Route 
+        path="/reject-budget" 
+        element={
+          <ProtectedRoute>
+            <RejectBudget />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="*" element={<Navigate to="/home" replace />} />
     </Routes>
@@ -242,6 +271,7 @@ const App = () => {
     <ConfigProvider>
       <AuthProvider>
         <Router>
+          <NavigateSetter />
           <AppRoutes />
           <Toaster 
             position="top-right"

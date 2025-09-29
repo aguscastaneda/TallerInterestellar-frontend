@@ -10,6 +10,7 @@ const ResetPassword = () => {
   const [passwordReset, setPasswordReset] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [error, setError] = useState("");
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -22,6 +23,15 @@ const ResetPassword = () => {
     formState: { errors },
   } = useForm();
 
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError("");
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
   const password = watch('password');
 
   useEffect(() => {
@@ -32,8 +42,10 @@ const ResetPassword = () => {
   }, [token, navigate]);
 
   const onSubmit = async (data) => {
+    setError("");
+    
     if (data.password !== data.confirmPassword) {
-      toast.error('Las contraseñas no coinciden');
+      setError('Las contraseñas no coinciden');
       return;
     }
 
@@ -55,14 +67,26 @@ const ResetPassword = () => {
       if (result.success) {
         setPasswordReset(true);
         toast.success('Contraseña restablecida exitosamente');
+
+        setTimeout(() => {
+          navigate('/login');
+        }, 1500);
       } else {
-        toast.error(result.message || 'Error al restablecer la contraseña');
+        setError(result.message || 'Error al restablecer la contraseña');
+        setIsLoading(false);
       }
     } catch (error) {
       console.error('Error:', error);
-      toast.error('Error de conexión');
-    } finally {
+   
+      setError('Error de conexión');
       setIsLoading(false);
+    }
+  };
+
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
     }
   };
 
@@ -97,7 +121,12 @@ const ResetPassword = () => {
 
           <CardContent>
             {!passwordReset ? (
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <form onSubmit={handleSubmit(onSubmit)} onKeyPress={handleKeyPress} className="space-y-6">
+                {error && (
+                  <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm animate-pulse">
+                    {error}
+                  </div>
+                )}
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                     Nueva Contraseña
@@ -169,7 +198,7 @@ const ResetPassword = () => {
                   )}
                 </div>
 
-                {/* Password strength indicator */}
+                {/* Longitud de contrasenia */}
                 {password && (
                   <div className="space-y-2">
                     <div className="text-sm text-gray-600">Fortaleza de la contraseña:</div>

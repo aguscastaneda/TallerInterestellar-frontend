@@ -9,6 +9,13 @@ export const api = axios.create({
   },
 });
 
+// Store navigate function for use in interceptors
+let navigateFunction = null;
+
+export const setNavigateFunction = (navigate) => {
+  navigateFunction = navigate;
+};
+
 // Interceptor para agregar token a todas las peticiones
 api.interceptors.request.use(
   (config) => {
@@ -32,7 +39,13 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       // Token expirado o inválido
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      // Use React Router navigation instead of window.location to prevent full page refresh
+      if (navigateFunction) {
+        navigateFunction('/login');
+      } else {
+        // Fallback to window.location if navigate function is not available
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
@@ -98,6 +111,8 @@ export const requestsService = {
   getByClient: (clientId) => api.get(`/requests/client/${clientId}`),
   assignMechanic: (id, mechanicId) => api.put(`/requests/${id}/assign`, { mechanicId }),
   updateStatus: (id, data) => api.put(`/requests/${id}/status`, data),
+  sendBudget: (id, data) => api.post(`/requests/${id}/budget`, data),
+  cancelRequest: (id) => api.post(`/requests/${id}/cancel`),
 };
 
 export const carStatesService = {

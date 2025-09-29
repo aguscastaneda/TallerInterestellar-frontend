@@ -4,12 +4,14 @@ import NavBar from '../NavBar';
 import { useAuth } from '../../contexts/AuthContext';
 import { useConfig } from '../../contexts/ConfigContext';
 import { carsService, usersService, requestsService, carStatesService } from '../../services/api';
-import { Button, Card, CardHeader, CardTitle, CardContent, CardFooter, Badge, Input, Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter, SegmentedControl } from '../ui';
-import { Plus, Car, Wrench, Calendar, Settings, Eye, X, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Button, Card, CardHeader, CardTitle, CardContent, CardFooter, Badge, Input, Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter } from '../ui';
+import { Plus, Car, Wrench, Settings, Eye, X, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { licensePlateValidator } from '../../utils/licensePlateValidator';
+import PropTypes from 'prop-types';
 
 const ClienteHome = () => {
   const { user } = useAuth();
-  const { getConstants, getStatusColor } = useConfig();
+  const { getConstants } = useConfig();
   const [showAdd, setShowAdd] = useState(false);
   const [cars, setCars] = useState([]);
   const [form, setForm] = useState({ licensePlate: '', brand: '', model: '', year: '', kms: '', chassis: '' });
@@ -17,6 +19,8 @@ const ClienteHome = () => {
   const [detailCarId, setDetailCarId] = useState(null);
   const [mechanics, setMechanics] = useState([]);
   const [requestForm, setRequestForm] = useState({ description: '', preferredMechanicId: '' });
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [carToCancel, setCarToCancel] = useState(null);
 
   const clientId = user?.client?.id;
 
@@ -29,19 +33,33 @@ const ClienteHome = () => {
       ]);
       setCars(carsRes.data.data || []);
       setMechanics((mechsRes.data.data || []).map(m => ({ id: m.id, name: `${m.user.name} ${m.user.lastName}` })));
-    } catch (e) {
+    } catch (error) {
+      console.error('Error loading data:', error);
       toast.error('Error cargando datos');
     }
   };
 
-  useEffect(() => { load(); }, [clientId]);
+  // Load data on component mount
+  useEffect(() => { 
+    load(); 
+    
+    // Set up periodic refresh every 30 seconds
+    const interval = setInterval(() => {
+      load();
+    }, 30000);
+    
+    // Clean up interval on component unmount
+    return () => clearInterval(interval);
+  }, [clientId]);
 
   const handleCreateCar = async () => {
     if (!clientId) return;
     try {
+      const normalizedLicensePlate = licensePlateValidator(form.licensePlate);
+      
       const payload = {
         clientId,
-        licensePlate: form.licensePlate.trim().toUpperCase(),
+        licensePlate: normalizedLicensePlate,
         brand: form.brand,
         model: form.model,
         kms: form.kms ? parseInt(form.kms) : null,
@@ -55,14 +73,20 @@ const ClienteHome = () => {
       setShowAdd(false);
       setForm({ licensePlate: '', brand: '', model: '', year: '', kms: '', chassis: '' });
       load();
-    } catch (e) {
-      toast.error(e.response?.data?.message || 'Error al crear');
+    } catch (error) {
+      console.error('Error creating car:', error);
+      toast.error(error.message || 'Error al crear');
     }
   };
 
   const openRequest = (carId) => {
     setRequestOpenId(carId);
     setRequestForm({ description: '', preferredMechanicId: '' });
+  };
+
+  const openCancelConfirm = (carId) => {
+    setCarToCancel(carId);
+    setShowCancelConfirm(true);
   };
 
   const createRequest = async () => {
@@ -81,27 +105,38 @@ const ClienteHome = () => {
       
       toast.success('Solicitud enviada');
       setRequestOpenId(null);
-      // Refrescar o actualizar estado local del auto a "Pendiente"
-      setCars(prev => prev.map(c => c.id === requestOpenId ? {
-        ...c,
-        status: { ...(c.status || {}), name: 'Pendiente' },
-      } : c));
-    } catch (e) {
-      toast.error(e.response?.data?.message || 'Error al solicitar');
+      // Refrescar completamente los datos
+      load();
+    } catch (error) {
+      console.error('Error creating request:', error);
+      toast.error(error.response?.data?.message || 'Error al solicitar');
     }
   };
 
-  const cancelRequest = async (carId) => {
+  const cancelRequest = async () => {
+    if (!carToCancel) return;
+    
     try {
-      // Cambiar estado del auto a "Cancelado" y luego a "Entrada"
-      const constants = getConstants();
-      await carStatesService.transition(carId, constants.CAR_STATUS.CANCELADO);
-      await carStatesService.transition(carId, constants.CAR_STATUS.ENTRADA);
+      // First, find the service request associated with this car
+      // We'll need to get all client requests and find the one for this car
+      const response = await requestsService.getByClient(clientId);
+      const requests = response.data.data || [];
+      const requestToCancel = requests.find(req => req.carId === carToCancel && req.status !== 'CANCELLED');
       
-      toast.success('Solicitud cancelada');
-      load(); // Recargar la lista
-    } catch (e) {
+      if (requestToCancel) {
+        await requestsService.cancelRequest(requestToCancel.id);
+        toast.success('Solicitud cancelada');
+        // Refrescar completamente los datos
+        load();
+      } else {
+        toast.error('No se encontró una solicitud activa para este vehículo');
+      }
+    } catch (error) {
+      console.error('Error canceling request:', error);
       toast.error('Error al cancelar solicitud');
+    } finally {
+      setShowCancelConfirm(false);
+      setCarToCancel(null);
     }
   };
 
@@ -283,11 +318,21 @@ const ClienteHome = () => {
                       </Button>
                       
                       {/* Botón de solicitar mecánico - solo visible si está en estado "Entrada" */}
-                      {car.statusId === getConstants().CAR_STATUS.ENTRADA && (
+                      {car.statusId === getConstants().CAR_STATUS.ENTRADA ? (
                         <Button
                           onClick={() => openRequest(car.id)}
                           size="sm"
                           leftIcon={<Wrench className="h-4 w-4" />}
+                        >
+                          Solicitar Mecánico
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          leftIcon={<Wrench className="h-4 w-4" />}
+                          disabled={true}
+                          title="Solo puedes solicitar un mecánico cuando el vehículo está en estado 'Entrada'"
                         >
                           Solicitar Mecánico
                         </Button>
@@ -296,7 +341,7 @@ const ClienteHome = () => {
                       {/* Botón de cancelar solicitud - solo visible si está en estado "Pendiente" */}
                       {car.statusId === getConstants().CAR_STATUS.PENDIENTE && (
                         <Button
-                          onClick={() => cancelRequest(car.id)}
+                          onClick={() => openCancelConfirm(car.id)}
                           variant="danger"
                           size="sm"
                           leftIcon={<X className="h-4 w-4" />}
@@ -375,6 +420,40 @@ const ClienteHome = () => {
           onClose={() => setDetailCarId(null)} 
         />
       )}
+
+      {/* Modal de confirmación de cancelación */}
+      <Modal isOpen={showCancelConfirm} onClose={() => setShowCancelConfirm(false)} size="sm">
+        <ModalHeader onClose={() => setShowCancelConfirm(false)}>
+          <div className="flex items-center space-x-3">
+            <div className="h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center">
+              <AlertCircle className="h-5 w-5 text-red-600" />
+            </div>
+            <ModalTitle>Confirmar Cancelación</ModalTitle>
+          </div>
+        </ModalHeader>
+        
+        <ModalContent>
+          <p className="text-gray-700">
+            ¿Estás seguro de que deseas cancelar esta solicitud? Esta acción no se puede deshacer.
+          </p>
+        </ModalContent>
+        
+        <ModalFooter>
+          <Button 
+            variant="secondary" 
+            onClick={() => setShowCancelConfirm(false)}
+          >
+            No, mantener solicitud
+          </Button>
+          <Button 
+            variant="danger" 
+            onClick={cancelRequest}
+            leftIcon={<X className="h-4 w-4" />}
+          >
+            Sí, cancelar solicitud
+          </Button>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 };
@@ -382,11 +461,6 @@ const ClienteHome = () => {
 export default ClienteHome;
 
 
-const StatusBadge = ({ statusId, statusName, getStatusColor }) => {
-  if (!statusName) return null;
-  const cls = getStatusColor(statusId) || 'bg-gray-100 text-gray-700';
-  return <span className={`ml-2 text-xs px-2 py-0.5 rounded ${cls}`}>{statusName}</span>;
-};
 
 const CarDetailModal = ({ car, onClose }) => {
   if (!car) return null;
@@ -506,4 +580,24 @@ const CarDetailModal = ({ car, onClose }) => {
       </ModalFooter>
     </Modal>
   );
+};
+
+CarDetailModal.propTypes = {
+  car: PropTypes.shape({
+    id: PropTypes.number,
+    licensePlate: PropTypes.string,
+    brand: PropTypes.string,
+    model: PropTypes.string,
+    year: PropTypes.number,
+    kms: PropTypes.number,
+    chassis: PropTypes.string,
+    description: PropTypes.string,
+    statusId: PropTypes.number,
+    status: PropTypes.shape({
+      name: PropTypes.string
+    }),
+    estimatedDate: PropTypes.string,
+    priority: PropTypes.number
+  }),
+  onClose: PropTypes.func
 };

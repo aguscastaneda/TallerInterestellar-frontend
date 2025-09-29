@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import NavBar from '../NavBar';
 import { useAuth } from '../../contexts/AuthContext';
-import { requestsService, paymentsService, carsService, repairsService } from '../../services/api';
+import { requestsService, carsService, repairsService } from '../../services/api';
+import PropTypes from 'prop-types';
 
 const MechanicRepairs = () => {
   const { user, roleKey } = useAuth();
@@ -35,26 +36,39 @@ const MechanicRepairs = () => {
         const repRes = await repairsService.getByCar(car.id);
         const reps = repRes.data.data || [];
         reps.forEach(rep => all.push({ type: 'repair', car, repair: rep }));
-      } catch (_) {}
+      } catch (error) {
+        console.error('Error loading repairs for car:', car.id, error);
+      }
     }
     setItems(all);
   };
 
-  useEffect(() => {
-    const run = async () => {
-      setLoading(true);
-      try {
-        if (roleKey === 'mecanico' && mechanicId) {
-          await loadForMechanic();
-        } else if (roleKey === 'cliente' && clientId) {
-          await loadForClient();
-        } else {
-          setItems([]);
-        }
-      } finally { setLoading(false); }
-    };
-    run();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      if (roleKey === 'mecanico' && mechanicId) {
+        await loadForMechanic();
+      } else if (roleKey === 'cliente' && clientId) {
+        await loadForClient();
+      } else {
+        setItems([]);
+      }
+    } finally { 
+      setLoading(false); 
+    }
+  };
+
+  // Load data on component mount
+  useEffect(() => { 
+    loadData(); 
+    
+    // Set up periodic refresh every 30 seconds
+    const interval = setInterval(() => {
+      loadData();
+    }, 30000);
+    
+    // Clean up interval on component unmount
+    return () => clearInterval(interval);
   }, [roleKey, mechanicId, clientId]);
 
   const filteredItems = useMemo(() => {
@@ -102,6 +116,10 @@ const MechanicRepairs = () => {
     const cls = isReq ? (stylesReq[value] || 'bg-gray-100 text-gray-700') : (stylesCar[value] || 'bg-gray-100 text-gray-700');
     const label = isReq ? (value === 'PENDING' ? 'Pendiente' : value === 'IN_PROGRESS' ? 'En reparacion' : 'Finalizado') : value;
     return <span className={`ml-2 text-xs px-2 py-0.5 rounded ${cls}`}>{label}</span>;
+  };
+
+  StatusBadge.propTypes = {
+    value: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
   };
 
   return (

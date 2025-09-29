@@ -4,7 +4,8 @@ import { toast } from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { carsService, requestsService } from '../../services/api';
 import { Button, Card, CardContent, Badge, Input, Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter, SegmentedControl } from '../ui';
-import { Wrench, Clock, CheckCircle, Eye, Play, Square, DollarSign, Car, Calendar, Clock3, CalendarCheck, Shield } from 'lucide-react';
+import { Wrench, Clock, CheckCircle, Eye, Square, DollarSign, Car, Calendar, Clock3, CalendarCheck, Shield } from 'lucide-react';
+import PropTypes from 'prop-types';
 
 const MecanicoHome = () => {
   const { user } = useAuth();
@@ -14,40 +15,52 @@ const MecanicoHome = () => {
   const [requests, setRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [finishModalOpen, setFinishModalOpen] = useState(null);
+  const [budgetModalOpen, setBudgetModalOpen] = useState(null);
 
   const mechanicId = user?.mechanic?.id;
 
   const load = async () => {
     if (!mechanicId) return;
     try {
-      // Load own assigned requests
-      const r = await fetch(`http://localhost:3001/api/requests/mechanic/${mechanicId}`);
-      const data = await r.json();
-      setRequests(data.data || []);
-    } catch (_) {
-      toast.error('Error cargando solicitudes');
+      const response = await requestsService.getByMechanic(mechanicId);
+      // Filter out cancelled requests
+      const filteredRequests = (response.data.data || []).filter(request => request.status !== 'CANCELLED');
+      setRequests(filteredRequests);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error cargando solicitudes');
     }
   };
 
-  useEffect(() => { load(); }, [mechanicId]);
+  // Load data on component mount
+  useEffect(() => { 
+    load(); 
+    
+    // Set up periodic refresh every 30 seconds
+    const interval = setInterval(() => {
+      load();
+    }, 30000);
+    
+    // Clean up interval on component unmount
+    return () => clearInterval(interval);
+  }, [mechanicId]);
 
   const doSearch = async () => {
     if (!query) return;
     try {
       const res = await carsService.getByPlate(query.trim().toUpperCase());
       setSearchResult(res.data.data);
-    } catch (_) {
+    } catch (error) {
       setSearchResult(null);
-      toast.error('Patente inexistente');
+      toast.error(error.response?.data?.message || 'Patente inexistente');
     }
   };
 
-  const startWork = async (reqItem) => {
+  const sendBudget = async (reqItem, budgetData) => {
     try {
-      await requestsService.updateStatus(reqItem.id, { status: 'IN_PROGRESS' });
-      toast.success('Trabajo iniciado');
+      await requestsService.sendBudget(reqItem.id, budgetData);
+      toast.success('Presupuesto enviado al cliente');
       load();
-    } catch (e) { toast.error('Error al iniciar'); }
+    } catch (error) { toast.error(error.response?.data?.message || 'Error al enviar presupuesto'); }
   };
 
   const finishWork = async (reqItem, payload) => {
@@ -55,26 +68,29 @@ const MecanicoHome = () => {
       await requestsService.updateStatus(reqItem.id, { status: 'COMPLETED', description: payload.description, cost: payload.cost });
       toast.success('Trabajo finalizado');
       load();
-    } catch (e) { toast.error('Error al finalizar'); }
+    } catch (error) { toast.error(error.response?.data?.message || 'Error al finalizar'); }
   };
 
   const getStatusIcon = (status) => {
     if (status === 'ASSIGNED') return <Clock className="h-4 w-4" />;
-    if (status === 'IN_PROGRESS') return <Wrench className="h-4 w-4" />;
+    if (status === 'PRESUPUESTO_ENVIADO') return <DollarSign className="h-4 w-4" />;
+    if (status === 'IN_REPAIR') return <Wrench className="h-4 w-4" />;
     if (status === 'COMPLETED') return <CheckCircle className="h-4 w-4" />;
     return <Clock className="h-4 w-4" />;
   };
 
   const getStatusVariant = (status) => {
     if (status === 'ASSIGNED') return 'warning';
-    if (status === 'IN_PROGRESS') return 'info';
+    if (status === 'PRESUPUESTO_ENVIADO') return 'info';
+    if (status === 'IN_REPAIR') return 'info';
     if (status === 'COMPLETED') return 'success';
     return 'neutral';
   };
 
   const getStatusLabel = (status) => {
     if (status === 'ASSIGNED') return 'Pendiente';
-    if (status === 'IN_PROGRESS') return 'En Proceso';
+    if (status === 'PRESUPUESTO_ENVIADO') return 'Presupuesto Enviado';
+    if (status === 'IN_REPAIR') return 'En Reparación';
     if (status === 'COMPLETED') return 'Finalizado';
     return status;
   };
@@ -86,8 +102,8 @@ const MecanicoHome = () => {
   ];
 
   const filteredRequests = requests.filter(r => 
-    (activeTab === 'pendientes' && r.status === 'ASSIGNED') || 
-    (activeTab === 'en-proceso' && r.status === 'IN_PROGRESS') || 
+    (activeTab === 'pendientes' && (r.status === 'ASSIGNED' || r.status === 'PRESUPUESTO_ENVIADO')) || 
+    (activeTab === 'en-proceso' && r.status === 'IN_REPAIR') || 
     (activeTab === 'finalizados' && r.status === 'COMPLETED')
   );
 
@@ -231,11 +247,12 @@ const MecanicoHome = () => {
                       
                       {activeTab === 'pendientes' && (
                         <Button
-                          onClick={() => startWork(item)}
+                          onClick={() => setBudgetModalOpen(item)}
                           size="sm"
-                          leftIcon={<Play className="h-4 w-4" />}
+                          leftIcon={<DollarSign className="h-4 w-4" />}
+                          disabled={item.status === 'PRESUPUESTO_ENVIADO'}
                         >
-                          Comenzar
+                          {item.status === 'PRESUPUESTO_ENVIADO' ? 'Presupuesto Enviado' : 'Presupuestar'}
                         </Button>
                       )}
                       
@@ -273,6 +290,18 @@ const MecanicoHome = () => {
           onSubmit={(payload) => {
             finishWork(finishModalOpen, payload);
             setFinishModalOpen(null);
+          }}
+        />
+      )}
+      
+      {/* Modal de presupuesto */}
+      {budgetModalOpen && (
+        <BudgetModal 
+          request={budgetModalOpen}
+          onClose={() => setBudgetModalOpen(null)}
+          onSubmit={(payload) => {
+            sendBudget(budgetModalOpen, payload);
+            setBudgetModalOpen(null);
           }}
         />
       )}
@@ -321,15 +350,22 @@ const RequestDetailModal = ({ request, onClose }) => {
                 <label className="text-sm font-medium text-gray-500">Estado</label>
                 <div className="flex items-center space-x-2 mt-1">
                   <Badge 
-                    variant={request.status === 'ASSIGNED' ? 'warning' : request.status === 'IN_PROGRESS' ? 'info' : 'success'}
+                    variant={
+                      request.status === 'ASSIGNED' ? 'warning' : 
+                      request.status === 'PRESUPUESTO_ENVIADO' ? 'info' : 
+                      request.status === 'IN_REPAIR' ? 'info' : 
+                      'success'
+                    }
                     size="md"
                   >
                     {request.status === 'ASSIGNED' ? <Clock className="h-4 w-4" /> : 
-                     request.status === 'IN_PROGRESS' ? <Wrench className="h-4 w-4" /> : 
+                     request.status === 'PRESUPUESTO_ENVIADO' ? <DollarSign className="h-4 w-4" /> : 
+                     request.status === 'IN_REPAIR' ? <Wrench className="h-4 w-4" /> : 
                      <CheckCircle className="h-4 w-4" />}
                     <span className="ml-1">
                       {request.status === 'ASSIGNED' ? 'Pendiente' : 
-                       request.status === 'IN_PROGRESS' ? 'En Proceso' : 'Finalizado'}
+                       request.status === 'PRESUPUESTO_ENVIADO' ? 'Presupuesto Enviado' : 
+                       request.status === 'IN_REPAIR' ? 'En Reparación' : 'Finalizado'}
                     </span>
                   </Badge>
                 </div>
@@ -479,6 +515,38 @@ const RequestDetailModal = ({ request, onClose }) => {
   );
 };
 
+RequestDetailModal.propTypes = {
+  request: PropTypes.shape({
+    id: PropTypes.number,
+    car: PropTypes.shape({
+      licensePlate: PropTypes.string,
+      brand: PropTypes.string,
+      model: PropTypes.string,
+      statusId: PropTypes.number
+    }),
+    client: PropTypes.shape({
+      user: PropTypes.shape({
+        name: PropTypes.string,
+        lastName: PropTypes.string
+      })
+    }),
+    status: PropTypes.string,
+    cost: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    repair: PropTypes.shape({
+      id: PropTypes.number,
+      cost: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      warranty: PropTypes.number,
+      description: PropTypes.string,
+      createdAt: PropTypes.string
+    }),
+    description: PropTypes.string,
+    repairDescription: PropTypes.string,
+    createdAt: PropTypes.string,
+    updatedAt: PropTypes.string
+  }),
+  onClose: PropTypes.func.isRequired
+};
+
 const FinalizeModal = ({ request, onClose, onSubmit }) => {
   const [description, setDescription] = useState('');
   const [cost, setCost] = useState('');
@@ -550,6 +618,100 @@ const FinalizeModal = ({ request, onClose, onSubmit }) => {
       </ModalFooter>
     </Modal>
   );
+};
+
+FinalizeModal.propTypes = {
+  request: PropTypes.shape({
+    car: PropTypes.shape({
+      licensePlate: PropTypes.string
+    })
+  }),
+  onClose: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired
+};
+
+const BudgetModal = ({ request, onClose, onSubmit }) => {
+  const [description, setDescription] = useState('');
+  const [cost, setCost] = useState('');
+
+  const handleSubmit = () => {
+    if (!description.trim()) {
+      toast.error('La descripción del presupuesto es requerida');
+      return;
+    }
+    if (!cost.trim() || isNaN(parseFloat(cost)) || parseFloat(cost) <= 0) {
+      toast.error('El costo debe ser un número válido mayor a cero');
+      return;
+    }
+    onSubmit({ description, cost: parseFloat(cost) });
+  };
+
+  return (
+    <Modal isOpen={!!request} onClose={onClose} size="md">
+      <ModalHeader onClose={onClose}>
+        <div className="flex items-center space-x-3">
+          <div className="h-10 w-10 rounded-lg bg-yellow-100 flex items-center justify-center">
+            <DollarSign className="h-5 w-5 text-yellow-600" />
+          </div>
+          <div>
+            <ModalTitle>Crear Presupuesto</ModalTitle>
+            <p className="text-sm text-gray-600">{request?.car?.licensePlate}</p>
+          </div>
+        </div>
+      </ModalHeader>
+      
+      <ModalContent>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Descripción del Trabajo *
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              placeholder="Describe detalladamente los trabajos a realizar..."
+              rows={4}
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Costo Estimado *
+            </label>
+            <Input
+              value={cost}
+              onChange={(e) => setCost(e.target.value)}
+              placeholder="0.00"
+              type="number"
+              step="0.01"
+              min="0"
+              leftIcon={<DollarSign className="h-4 w-4" />}
+            />
+          </div>
+        </div>
+      </ModalContent>
+      
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          Cancelar
+        </Button>
+        <Button onClick={handleSubmit} leftIcon={<DollarSign className="h-4 w-4" />}>
+          Enviar Presupuesto
+        </Button>
+      </ModalFooter>
+    </Modal>
+  );
+};
+
+BudgetModal.propTypes = {
+  request: PropTypes.shape({
+    car: PropTypes.shape({
+      licensePlate: PropTypes.string
+    })
+  }),
+  onClose: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired
 };
 
 export default MecanicoHome;

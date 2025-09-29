@@ -1,4 +1,4 @@
-  import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
@@ -9,6 +9,7 @@ import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(""); // Estado para manejar errores
   const { login, checkAuth, roleKey } = useAuth();
   const navigate = useNavigate();
 
@@ -18,27 +19,49 @@ const Login = () => {
     formState: { errors },
   } = useForm();
 
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError("");
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
   const onSubmit = async (data) => {
     setIsLoading(true);
+    setError(""); // Limpiar errores previos
+    
     try {
       const result = await login(data.email, data.password);
+      
       if (result.success) {
         toast.success('¡Login exitoso!');
         // Asegura que el contexto tenga el usuario actualizado
         await checkAuth();
         const map = { cliente: '/home/cliente', mecanico: '/home/mecanico', jefe: '/home/jefe', admin: '/home/admin' };
-        navigate(map[roleKey] || '/home');
+        setTimeout(() => {
+          navigate(map[roleKey] || '/home');
+        }, 1000);
       } else {
-        toast.error(result.message || 'Error en el login');
+       
+        setError(result.message || 'Error en el login');
+        setIsLoading(false);
       }
-    } catch {
-      toast.error('Error en el servidor');
-    } finally {
+    } catch (error) {
+      console.error('Error en login:', error);
+    
+      setError('Error en el servidor');
       setIsLoading(false);
     }
   };
 
-
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50 flex items-center justify-center p-4">
@@ -93,7 +116,14 @@ const Login = () => {
               </CardHeader>
 
               <CardContent>
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                {/* Mostrar errores aquí */}
+                {error && (
+                  <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm animate-pulse">
+                    {error}
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmit(onSubmit)} onKeyPress={handleKeyPress} className="space-y-6">
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                       Email

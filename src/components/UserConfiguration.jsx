@@ -23,12 +23,34 @@ const UserConfiguration = () => {
   const { user, updateUser } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showPasswords, setShowPasswords] = useState({
     current: false,
     new: false,
     confirm: false
   });
+
+  // Clear error after 3 seconds if it exists
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError("");
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  // Clear password error after 3 seconds if it exists
+  useEffect(() => {
+    if (passwordError) {
+      const timer = setTimeout(() => {
+        setPasswordError("");
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [passwordError]);
 
   // Formulario de datos personales
   const [profileForm, setProfileForm] = useState({
@@ -62,12 +84,14 @@ const UserConfiguration = () => {
   const handleProfileUpdate = async () => {
     if (!user?.id) return;
 
+    setError("");
     try {
       setLoading(true);
       
       // Validar campos requeridos
       if (!profileForm.name || !profileForm.lastName || !profileForm.email) {
-        toast.error('Nombre, apellido y email son campos obligatorios');
+        setError('Nombre, apellido y email son campos obligatorios');
+        setLoading(false);
         return;
       }
 
@@ -77,11 +101,16 @@ const UserConfiguration = () => {
         // Actualizar datos del usuario en el contexto
         updateUser(response.data.data);
         toast.success('Perfil actualizado exitosamente');
+        setLoading(false);
+      } else {
+     
+        setError(response.data.message || 'Error al actualizar el perfil');
+        setLoading(false);
       }
     } catch (error) {
       console.error('Error actualizando perfil:', error);
-      toast.error(error.response?.data?.message || 'Error al actualizar el perfil');
-    } finally {
+ 
+      setError(error.response?.data?.message || 'Error al actualizar el perfil');
       setLoading(false);
     }
   };
@@ -89,27 +118,32 @@ const UserConfiguration = () => {
   const handlePasswordChange = async () => {
     if (!user?.id) return;
 
+    setPasswordError("");
     try {
       setLoading(true);
 
       // Validaciones
       if (!passwordForm.currentPassword) {
-        toast.error('Debe ingresar la contraseña actual');
+        setPasswordError('Debe ingresar la contraseña actual');
+        setLoading(false);
         return;
       }
 
       if (!passwordForm.newPassword) {
-        toast.error('Debe ingresar la nueva contraseña');
+        setPasswordError('Debe ingresar la nueva contraseña');
+        setLoading(false);
         return;
       }
 
       if (passwordForm.newPassword.length < 6) {
-        toast.error('La nueva contraseña debe tener al menos 6 caracteres');
+        setPasswordError('La nueva contraseña debe tener al menos 6 caracteres');
+        setLoading(false);
         return;
       }
 
       if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-        toast.error('Las contraseñas nuevas no coinciden');
+        setPasswordError('Las contraseñas nuevas no coinciden');
+        setLoading(false);
         return;
       }
 
@@ -131,11 +165,16 @@ const UserConfiguration = () => {
           new: false,
           confirm: false
         });
+        setLoading(false);
+      } else {
+    
+        setPasswordError(response.data.message || 'Error al cambiar la contraseña');
+        setLoading(false);
       }
     } catch (error) {
       console.error('Error cambiando contraseña:', error);
-      toast.error(error.response?.data?.message || 'Error al cambiar la contraseña');
-    } finally {
+    
+      setPasswordError(error.response?.data?.message || 'Error al cambiar la contraseña');
       setLoading(false);
     }
   };
@@ -190,6 +229,11 @@ const UserConfiguration = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {error && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm animate-pulse">
+                  {error}
+                </div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -327,6 +371,11 @@ const UserConfiguration = () => {
         
         <ModalContent>
           <div className="space-y-4">
+            {passwordError && (
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm animate-pulse">
+                {passwordError}
+              </div>
+            )}
             {/* Contraseña actual */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">

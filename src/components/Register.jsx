@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,7 +11,8 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { register: registerUser } = useAuth();
+  const [error, setError] = useState(""); // Estado para manejar errores
+  const { registerUser } = useAuth();
   const { config } = useConfig();
   const navigate = useNavigate();
 
@@ -22,15 +23,26 @@ const Register = () => {
     formState: { errors },
   } = useForm();
 
+  // Clear error after 3 seconds if it exists
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError("");
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
   const password = watch('password');
 
   const onSubmit = async (data) => {
     if (data.password !== data.confirmPassword) {
-      toast.error('Las contraseñas no coinciden');
+      setError('Las contraseñas no coinciden');
       return;
     }
 
     setIsLoading(true);
+    setError(""); // Limpiar errores previos
     try {
       const result = await registerUser({
         name: data.name,
@@ -44,18 +56,29 @@ const Register = () => {
 
       if (result.success) {
         toast.success('¡Usuario registrado exitosamente!');
-        navigate('/home');
+        // Add a small delay before navigation to allow user to see success message
+        setTimeout(() => {
+          navigate('/home');
+        }, 1000);
       } else {
-        toast.error(result.message || 'Error en el registro');
+        // For errors, we set the error and stop loading immediately so user can see the error
+        setError(result.message || 'Error en el registro');
+        setIsLoading(false);
       }
-    } catch {
-      toast.error('Error en el servidor');
-    } finally {
+    } catch (error) {
+      console.error('Error en registro:', error);
+      // For exceptions, we set the error and stop loading immediately so user can see the error
+      setError('Error en el servidor');
       setIsLoading(false);
     }
   };
 
-
+  // Prevent form submission if Enter key is pressed without proper handling
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50 flex items-center justify-center p-4">
@@ -114,7 +137,14 @@ const Register = () => {
               </CardHeader>
 
               <CardContent>
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                {/* Mostrar errores aquí */}
+                {error && (
+                  <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm animate-pulse">
+                    {error}
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmit(onSubmit)} onKeyPress={handleKeyPress} className="space-y-6">
                   {/* Información Personal */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>

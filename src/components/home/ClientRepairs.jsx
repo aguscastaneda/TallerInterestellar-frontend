@@ -88,8 +88,17 @@ const ClientRepairs = () => {
     }
   };
 
-  useEffect(() => {
-    loadRepairs();
+  // Load data on component mount
+  useEffect(() => { 
+    loadRepairs(); 
+    
+    // Set up periodic refresh every 30 seconds
+    const interval = setInterval(() => {
+      loadRepairs();
+    }, 30000);
+    
+    // Clean up interval on component unmount
+    return () => clearInterval(interval);
   }, [clientId]);
 
   // Manejar parámetros de retorno de MercadoPago

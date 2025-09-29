@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
@@ -8,6 +8,7 @@ import { ArrowLeft, Mail, Send } from 'lucide-react';
 const ForgotPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const {
@@ -17,8 +18,18 @@ const ForgotPassword = () => {
     getValues
   } = useForm();
 
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError("");
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
   const onSubmit = async (data) => {
     setIsLoading(true);
+    setError("");
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/forgot-password`, {
         method: 'POST',
@@ -33,14 +44,23 @@ const ForgotPassword = () => {
       if (result.success) {
         setEmailSent(true);
         toast.success('Email enviado correctamente');
+        setIsLoading(false);
       } else {
-        toast.error(result.message || 'Error al enviar el email');
+        
+        setError(result.message || 'Error al enviar el email');
+        setIsLoading(false);
       }
     } catch (error) {
       console.error('Error:', error);
-      toast.error('Error de conexión');
-    } finally {
+     
+      setError('Error de conexión');
       setIsLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
     }
   };
 
@@ -67,7 +87,7 @@ const ForgotPassword = () => {
 
           <CardContent>
             {!emailSent ? (
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <form onSubmit={handleSubmit(onSubmit)} onKeyPress={handleKeyPress} className="space-y-6">
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                     Email
@@ -90,6 +110,12 @@ const ForgotPassword = () => {
                     <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
                   )}
                 </div>
+
+                {error && (
+                  <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm animate-pulse">
+                    {error}
+                  </div>
+                )}
 
                 <Button
                   type="submit"

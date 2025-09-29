@@ -6,6 +6,7 @@ import { useConfig } from '../../contexts/ConfigContext';
 import { usersService, requestsService, carsService } from '../../services/api';
 import { Button, Card, CardContent, Badge, Input, Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter, SegmentedControl } from '../ui';
 import { Wrench, Clock, CheckCircle, Eye, User, Plus, Edit, Trash2, Users, FileText, Calendar, Phone, Mail, Shield, DollarSign, Clock3, CalendarCheck } from 'lucide-react';
+import { validateMechanicCreationForm } from '../../utils/validation';
 
 const JefeHome = () => {
   const { user } = useAuth();
@@ -56,42 +57,62 @@ const JefeHome = () => {
         usersService.getMechanics()
       ]);
       console.log('Respuesta de mecánicos:', mechsRes.data);
-      setRequests(reqRes.data.data || []);
+      // Filter out cancelled requests
+      const filteredRequests = (reqRes.data.data || []).filter(r => r.status !== 'CANCELLED');
+      setRequests(filteredRequests);
       const filteredMechanics = (mechsRes.data.data || []).filter(m => m.bossId === bossId);
       console.log('Mecánicos filtrados para este jefe:', filteredMechanics);
       setMechanics(filteredMechanics);
-    } catch (e) { 
-      console.error('Error cargando datos:', e);
-      toast.error('Error cargando datos'); 
+    } catch (error) { 
+      console.error('Error cargando datos:', error);
+      toast.error(error.response?.data?.message || 'Error cargando datos'); 
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(()=>{ load(); }, [bossId]);
+  // Load data on component mount
+  useEffect(() => { 
+    load(); 
+    
+    // Set up periodic refresh every 30 seconds
+    const interval = setInterval(() => {
+      load();
+    }, 30000);
+    
+    // Clean up interval on component unmount
+    return () => clearInterval(interval);
+  }, [bossId]);
 
   const doSearch = async () => {
     if (!query) return;
     try { const res = await carsService.getByPlate(query.trim().toUpperCase()); setSearchResult(res.data.data); }
-    catch { setSearchResult(null); toast.error('Patente inexistente'); }
+    catch (error) { setSearchResult(null); toast.error(error.response?.data?.message || 'Patente inexistente'); }
   };
 
   const assignMechanic = async (requestId, mechanicId) => {
     try { await requestsService.assignMechanic(requestId, mechanicId); toast.success('Asignado'); load(); }
-    catch { toast.error('Error al asignar'); }
+    catch (error) { toast.error(error.response?.data?.message || 'Error al asignar'); }
   };
 
   // Funciones para manejar mecánicos
   const handleCreateMechanic = async () => {
     try {
+      // Validate form data
+      const validation = validateMechanicCreationForm(createForm, bossId);
+      
+      if (!validation.isValid) {
+        validation.errors.forEach(error => toast.error(error));
+        return;
+      }
+      
       const mechanicData = {
         ...createForm,
         roleId: 2, // Mecánico
-        bossId: bossId // Pasar el bossId directamente
+        bossId: bossId
       };
-      console.log('Creando mecánico con datos:', mechanicData);
-      const response = await usersService.create(mechanicData);
-      console.log('Respuesta del servidor:', response.data);
+      
+      await usersService.create(mechanicData);
       
       toast.success('Mecánico creado correctamente');
       setShowCreateMechanic(false);

@@ -355,7 +355,7 @@ const RecepcionistaHome = () => {
                         <p className="text-gray-900">
                           {(() => {
                             try {
-                              // Try user.createdAt first, then fallback to client.createdAt
+                            
                               const dateValue = showClientDetails.user?.createdAt || showClientDetails.createdAt;
                               
                               if (!dateValue) return 'Fecha no disponible';

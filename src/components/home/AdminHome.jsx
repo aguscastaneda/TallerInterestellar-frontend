@@ -6,14 +6,33 @@ import { useConfig } from '../../contexts/ConfigContext';
 import { carsService, usersService } from '../../services/api';
 import { Button, Card, CardContent, Badge, Input, Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter, SegmentedControl } from '../ui';
 import { User, Users, Wrench, Shield, Eye, Edit, Trash2, Plus, Mail, Phone, Calendar, CheckCircle, XCircle, Car } from 'lucide-react';
+import { validateUserCreationForm } from '../../utils/validation';
+
+// Role constants
+const ROLE_IDS = {
+  CLIENT: 1,
+  MECHANIC: 2,
+  BOSS: 3,
+  ADMIN: 4,
+  RECEPTIONIST: 5
+};
+
+const ROLE_NAMES = {
+  CLIENT: 'clientes',
+  MECHANIC: 'mecanicos',
+  BOSS: 'jefes',
+  ADMIN: 'admins',
+  RECEPTIONIST: 'recepcionistas'
+};
 
 const AdminHome = () => {
-  const { user } = useAuth();
-  const { config } = useConfig();
+  useAuth();
+  useConfig(); // Just call the hook without destructuring since we don't use the returned values
   const [query, setQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('clientes');
+  const [activeTab, setActiveTab] = useState(ROLE_NAMES.CLIENT);
   const [searchResult, setSearchResult] = useState(null);
   const [users, setUsers] = useState([]);
+  const [bosses, setBosses] = useState([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [showUserDetails, setShowUserDetails] = useState(null);
@@ -24,7 +43,8 @@ const AdminHome = () => {
     cuil: '',
     email: '',
     password: '',
-    roleId: 1
+    roleId: ROLE_IDS.CLIENT,
+    bossId: ''
   });
   const [editForm, setEditForm] = useState({
     name: '',
@@ -34,41 +54,56 @@ const AdminHome = () => {
     password: ''
   });
 
-  // Determinar el roleId basado en la pestaña activa
+  // Get role ID based on active tab
   const getRoleIdForActiveTab = () => {
     const roleMap = {
-      'clientes': 'CLIENT',
-      'mecanicos': 'MECHANIC', 
-      'jefes': 'BOSS',
-      'admins': 'ADMIN',
-      'recepcionistas': 'RECEPTIONIST'
+      [ROLE_NAMES.CLIENT]: ROLE_IDS.CLIENT,
+      [ROLE_NAMES.MECHANIC]: ROLE_IDS.MECHANIC,
+      [ROLE_NAMES.BOSS]: ROLE_IDS.BOSS,
+      [ROLE_NAMES.ADMIN]: ROLE_IDS.ADMIN,
+      [ROLE_NAMES.RECEPTIONIST]: ROLE_IDS.RECEPTIONIST
     };
-    const roleKey = roleMap[activeTab];
-    const role = config.roles.find(r => r.name.toLowerCase() === roleKey?.toLowerCase());
-    return role?.id || 1;
+    
+    return roleMap[activeTab] || ROLE_IDS.CLIENT;
   };
 
+  // Load all users
   const loadUsers = async () => {
     try {
-      console.log('Cargando usuarios...');
       const res = await usersService.getAll();
       
       if (res.data?.success && res.data?.data) {
         setUsers(res.data.data);
-        console.log('Usuarios cargados:', res.data.data.length);
       } else {
-        console.log('No se encontraron usuarios o respuesta inválida');
         setUsers([]);
       }
     } catch (e) {
-      console.error('Error cargando usuarios:', e);
-      toast.error('Error cargando usuarios: ' + (e.response?.data?.message || e.message));
+      console.error('Error loading users:', e);
+      toast.error('Error loading users: ' + (e.response?.data?.message || e.message));
       setUsers([]);
     }
   };
 
+  // Load bosses for mechanic assignment
+  const loadBosses = async () => {
+    try {
+      const res = await usersService.getBosses();
+      if (res.data?.success && res.data?.data) {
+        setBosses(res.data.data);
+      } else {
+        setBosses([]);
+      }
+    } catch (e) {
+      console.error('Error loading bosses:', e);
+      toast.error('Error loading bosses: ' + (e.response?.data?.message || e.message));
+      setBosses([]);
+    }
+  };
+
+  // Load data on component mount
   useEffect(() => {
     loadUsers();
+    loadBosses();
   }, []);
 
   const doSearch = async () => {
@@ -76,18 +111,36 @@ const AdminHome = () => {
     try {
       const res = await carsService.getByPlate(query.trim().toUpperCase());
       setSearchResult(res.data.data);
-    } catch (e) {
+    } catch (error) {
       setSearchResult(null);
-      toast.error('Patente inexistente');
+      toast.error(error.response?.data?.message || 'License plate not found');
     }
   };
 
+  // Handle user creation
   const handleCreateUser = async () => {
     try {
+      // Validate form data
+      const roleId = getRoleIdForActiveTab();
+      const validation = validateUserCreationForm(createForm, roleId);
+      
+      if (!validation.isValid) {
+        validation.errors.forEach(error => toast.error(error));
+        return;
+      }
+      
       const formData = {
         ...createForm,
-        roleId: getRoleIdForActiveTab()
+        roleId
       };
+      
+      // Process boss assignment for mechanics
+      if (roleId === ROLE_IDS.MECHANIC) {
+        formData.bossId = parseInt(formData.bossId);
+      } else {
+        delete formData.bossId;
+      }
+      
       await usersService.create(formData);
       toast.success('Usuario creado exitosamente');
       setShowCreateForm(false);
@@ -97,11 +150,12 @@ const AdminHome = () => {
         cuil: '',
         email: '',
         password: '',
-        roleId: 1
+        roleId: ROLE_IDS.CLIENT,
+        bossId: ''
       });
       loadUsers();
-    } catch (e) {
-      toast.error(e.response?.data?.message || 'Error al crear usuario');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error creating user');
     }
   };
 
@@ -115,8 +169,8 @@ const AdminHome = () => {
       await usersService.delete(userId);
       toast.success(`Usuario ${action}do correctamente`);
       loadUsers();
-    } catch (e) {
-      toast.error(`Error al ${action} usuario`);
+    } catch (error) {
+      toast.error(error.response?.data?.message || `Error al ${action} usuario`);
     }
   };
 
@@ -127,7 +181,7 @@ const AdminHome = () => {
       lastName: userItem.lastName,
       cuil: userItem.cuil || '',
       email: userItem.email,
-      password: '' // No pre-llenar la contraseña por seguridad
+      password: '' 
     });
     setShowEditForm(true);
   };
@@ -151,8 +205,8 @@ const AdminHome = () => {
       setShowEditForm(false);
       setEditingUser(null);
       loadUsers();
-    } catch (e) {
-      toast.error(e.response?.data?.message || 'Error al actualizar usuario');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error al actualizar usuario');
     }
   };
 
@@ -172,11 +226,6 @@ const AdminHome = () => {
     return user.role?.name || 'Desconocido';
   };
 
-  const handleHistoryClick = () => {
-    // Admin doesn't need repairs history - different functionality
-    toast.info('Panel de administración - Sin historial de reparaciones');
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <NavBar roleBadge={true} showHistory={false} />
@@ -192,7 +241,7 @@ const AdminHome = () => {
           </p>
         </div>
 
-        {/* Búsqueda de vehículos */}
+        {/* Búsqueda de autos */}
         <Card className="mb-8">
           <CardContent className="p-8">
             <div className="flex items-center justify-center">
@@ -287,7 +336,7 @@ const AdminHome = () => {
           <Modal isOpen={showCreateForm} onClose={() => setShowCreateForm(false)}>
             <ModalHeader>
               <ModalTitle>
-                Crear {activeTab === 'clientes' ? 'Cliente' : activeTab === 'mecanicos' ? 'Mecánico' : 'Jefe de Mecánicos'}
+                Crear {activeTab === ROLE_NAMES.CLIENT ? 'Cliente' : activeTab === ROLE_NAMES.MECHANIC ? 'Mecánico' : 'Jefe de Mecánicos'}
               </ModalTitle>
             </ModalHeader>
             <ModalContent>
@@ -326,6 +375,32 @@ const AdminHome = () => {
                   type="password"
                   label="Contraseña"
                 />
+                {getRoleIdForActiveTab() === ROLE_IDS.MECHANIC && (
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Jefe de Mecánicos *
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={createForm.bossId}
+                        onChange={(e) => setCreateForm({...createForm, bossId: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none"
+                      >
+                        <option value="">Selecciona un jefe de mecánicos</option>
+                        {bosses.map(boss => (
+                          <option key={boss.id} value={boss.id}>
+                            {boss.user.name} {boss.user.lastName}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                          <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </ModalContent>
             <ModalFooter>
