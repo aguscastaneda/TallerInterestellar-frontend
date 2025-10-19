@@ -9,19 +9,18 @@ import { CheckCircle, XCircle, Loader } from 'lucide-react';
 const AcceptBudget = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  // const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState('pending'); // pending, success, error
+  const [status, setStatus] = useState('pending');
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const carId = urlParams.get('carId');
-    
+
     if (!carId) {
       toast.error('ID de vehículo no proporcionado');
       navigate('/home/cliente');
       return;
     }
-    
+
     const acceptBudget = async () => {
       try {
         await carStatesService.acceptBudget(carId);
@@ -32,7 +31,7 @@ const AcceptBudget = () => {
         toast.error(error.response?.data?.message || 'Error al aceptar presupuesto');
       }
     };
-    
+
     acceptBudget();
   }, [location, navigate]);
 
@@ -77,7 +76,6 @@ const AcceptBudget = () => {
     );
   }
 
-  // Error state
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <Card className="max-w-md w-full mx-4">

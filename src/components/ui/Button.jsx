@@ -13,7 +13,7 @@ const Button = forwardRef(({
   ...props
 }, ref) => {
   const baseClasses = 'btn-base';
-  
+
   const variantClasses = {
     primary: 'btn-primary',
     secondary: 'btn-secondary',
@@ -22,13 +22,13 @@ const Button = forwardRef(({
     danger: 'btn-danger',
     ghost: 'btn-ghost',
   };
-  
+
   const sizeClasses = {
     sm: 'btn-sm',
     md: 'btn-md',
     lg: 'btn-lg',
   };
-  
+
   const classes = clsx(
     baseClasses,
     variantClasses[variant],
@@ -39,7 +39,7 @@ const Button = forwardRef(({
     },
     className
   );
-  
+
   return (
     <button
       ref={ref}

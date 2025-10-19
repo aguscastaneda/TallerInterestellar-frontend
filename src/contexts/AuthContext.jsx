@@ -42,20 +42,20 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await api.post('/auth/login', { email, password });
       const { user: userData, token: newToken } = response.data.data;
-      
+
       setUser(userData);
       setToken(newToken);
       localStorage.setItem('token', newToken);
-      
-      // Configurar token en axios
+
+
       api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-      
+
       return { success: true };
     } catch (error) {
       console.error('Error en login:', error);
-      return { 
-        success: false, 
-        message: error.response?.data?.message || 'Error en el login' 
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Error en el login'
       };
     }
   };
@@ -63,25 +63,24 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await api.post('/auth/register', userData);
-      
-      // Si el registro es exitoso y devuelve un token, iniciar sesión automáticamente
+
+
       if (response.data.success && response.data.data.token) {
         const { user: userData, token: newToken } = response.data.data;
-        
+
         setUser(userData);
         setToken(newToken);
         localStorage.setItem('token', newToken);
-        
-        // Configurar token en axios
+
         api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
       }
-      
+
       return { success: true, data: response.data.data };
     } catch (error) {
       console.error('Error en registro:', error);
-      return { 
-        success: false, 
-        message: error.response?.data?.message || 'Error en el registro' 
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Error en el registro'
       };
     }
   };
@@ -98,7 +97,6 @@ export const AuthProvider = ({ children }) => {
   };
 
   const isAuthenticated = !!user && !!token;
-  // Normaliza el rol a una clave conocida
   const normalizeRoleName = (name) => {
     if (!name) return null;
     const n = String(name).trim().toLowerCase();

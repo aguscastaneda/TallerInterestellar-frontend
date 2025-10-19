@@ -9,18 +9,18 @@ import { CheckCircle, XCircle, Loader } from 'lucide-react';
 const RejectBudget = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [status, setStatus] = useState('pending'); 
+  const [status, setStatus] = useState('pending');
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const carId = urlParams.get('carId');
-    
+
     if (!carId) {
       toast.error('ID de vehículo no proporcionado');
       navigate('/home/cliente');
       return;
     }
-    
+
     const rejectBudget = async () => {
       try {
         await carStatesService.rejectBudget(carId);
@@ -31,7 +31,7 @@ const RejectBudget = () => {
         toast.error(error.response?.data?.message || 'Error al rechazar presupuesto');
       }
     };
-    
+
     rejectBudget();
   }, [location, navigate]);
 

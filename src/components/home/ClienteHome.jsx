@@ -15,6 +15,7 @@ const ClienteHome = () => {
   const [showAdd, setShowAdd] = useState(false);
   const [cars, setCars] = useState([]);
   const [form, setForm] = useState({ licensePlate: '', brand: '', model: '', year: '', kms: '', chassis: '' });
+  const [formErrors, setFormErrors] = useState({});
   const [requestOpenId, setRequestOpenId] = useState(null);
   const [detailCarId, setDetailCarId] = useState(null);
   const [mechanics, setMechanics] = useState([]);
@@ -39,43 +40,74 @@ const ClienteHome = () => {
     }
   };
 
-  // Load data on component mount
-  useEffect(() => { 
-    load(); 
-    
-    // Set up periodic refresh every 30 seconds
+
+  useEffect(() => {
+    load();
+
+
     const interval = setInterval(() => {
       load();
     }, 30000);
-    
-    // Clean up interval on component unmount
+
+
     return () => clearInterval(interval);
   }, [clientId]);
 
+  const validateForm = () => {
+    const errors = {};
+
+    if (!form.licensePlate.trim()) {
+      errors.licensePlate = 'Este campo es obligatorio';
+    }
+    if (!form.brand.trim()) {
+      errors.brand = 'Este campo es obligatorio';
+    }
+    if (!form.model.trim()) {
+      errors.model = 'Este campo es obligatorio';
+    }
+    if (!form.year || form.year < 1900 || form.year > new Date().getFullYear() + 1) {
+      errors.year = 'Este campo es obligatorio y debe ser válido';
+    }
+    if (!form.kms || form.kms < 0) {
+      errors.kms = 'Este campo es obligatorio';
+    }
+    if (!form.chassis || form.chassis.length !== 17) {
+      errors.chassis = 'El chasis debe tener exactamente 17 caracteres';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleCreateCar = async () => {
     if (!clientId) return;
+
+    if (!validateForm()) {
+      return;
+    }
+
     try {
       const normalizedLicensePlate = licensePlateValidator(form.licensePlate);
-      
+
       const payload = {
         clientId,
         licensePlate: normalizedLicensePlate,
-        brand: form.brand,
-        model: form.model,
-        kms: form.kms ? parseInt(form.kms) : null,
-        chassis: form.chassis || null,
-        description: null,
-        statusId: 1,
-        priority: 1
+        brand: form.brand.trim(),
+        model: form.model.trim(),
+        year: parseInt(form.year),
+        kms: parseInt(form.kms),
+        chassis: form.chassis.trim().toUpperCase(),
+        statusId: 1
       };
       await carsService.create(payload);
       toast.success('Patente registrada');
       setShowAdd(false);
       setForm({ licensePlate: '', brand: '', model: '', year: '', kms: '', chassis: '' });
+      setFormErrors({});
       load();
     } catch (error) {
       console.error('Error creating car:', error);
-      toast.error(error.message || 'Error al crear');
+      toast.error(error.response?.data?.message || 'Error al crear');
     }
   };
 
@@ -98,14 +130,14 @@ const ClienteHome = () => {
         description: requestForm.description,
         preferredMechanicId: requestForm.preferredMechanicId ? parseInt(requestForm.preferredMechanicId) : undefined
       });
-      
-      // Cambiar estado del auto a "Pendiente"
+
+
       const constants = getConstants();
       await carStatesService.transition(requestOpenId, constants.CAR_STATUS.PENDIENTE);
-      
+
       toast.success('Solicitud enviada');
       setRequestOpenId(null);
-      // Refrescar completamente los datos
+
       load();
     } catch (error) {
       console.error('Error creating request:', error);
@@ -115,18 +147,17 @@ const ClienteHome = () => {
 
   const cancelRequest = async () => {
     if (!carToCancel) return;
-    
+
     try {
-      // First, find the service request associated with this car
-      // We'll need to get all client requests and find the one for this car
+
       const response = await requestsService.getByClient(clientId);
       const requests = response.data.data || [];
       const requestToCancel = requests.find(req => req.carId === carToCancel && req.status !== 'CANCELLED');
-      
+
       if (requestToCancel) {
         await requestsService.cancelRequest(requestToCancel.id);
         toast.success('Solicitud cancelada');
-        // Refrescar completamente los datos
+
         load();
       } else {
         toast.error('No se encontró una solicitud activa para este vehículo');
@@ -161,7 +192,7 @@ const ClienteHome = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <NavBar roleBadge={true} showHistory={false} />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -182,7 +213,7 @@ const ClienteHome = () => {
           >
             Agregar Vehículo
           </Button>
-          
+
           <Button
             variant="secondary"
             onClick={() => window.location.href = '/home/client/repairs'}
@@ -201,45 +232,120 @@ const ClienteHome = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <Input
-                  value={form.licensePlate}
-                  onChange={e => setForm({...form, licensePlate: e.target.value})}
-                  placeholder="Patente"
-                  leftIcon={<Car className="h-4 w-4" />}
-                />
-                <Input
-                  value={form.brand}
-                  onChange={e => setForm({...form, brand: e.target.value})}
-                  placeholder="Marca"
-                />
-                <Input
-                  value={form.model}
-                  onChange={e => setForm({...form, model: e.target.value})}
-                  placeholder="Modelo"
-                />
-                <Input
-                  value={form.year}
-                  onChange={e => setForm({...form, year: e.target.value})}
-                  placeholder="Año"
-                  type="number"
-                />
-                <Input
-                  value={form.kms}
-                  onChange={e => setForm({...form, kms: e.target.value})}
-                  placeholder="Kilómetros"
-                  type="number"
-                />
-                <Input
-                  value={form.chassis}
-                  onChange={e => setForm({...form, chassis: e.target.value})}
-                  placeholder="Número de Chasis"
-                />
+                <div>
+                  <Input
+                    value={form.licensePlate}
+                    onChange={e => {
+                      setForm({ ...form, licensePlate: e.target.value });
+                      if (formErrors.licensePlate) {
+                        setFormErrors({ ...formErrors, licensePlate: '' });
+                      }
+                    }}
+                    placeholder="Patente"
+                    leftIcon={<Car className="h-4 w-4" />}
+                    error={formErrors.licensePlate}
+                  />
+                  {formErrors.licensePlate && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.licensePlate}</p>
+                  )}
+                </div>
+                <div>
+                  <Input
+                    value={form.brand}
+                    onChange={e => {
+                      setForm({ ...form, brand: e.target.value });
+                      if (formErrors.brand) {
+                        setFormErrors({ ...formErrors, brand: '' });
+                      }
+                    }}
+                    placeholder="Marca"
+                    error={formErrors.brand}
+                  />
+                  {formErrors.brand && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.brand}</p>
+                  )}
+                </div>
+                <div>
+                  <Input
+                    value={form.model}
+                    onChange={e => {
+                      setForm({ ...form, model: e.target.value });
+                      if (formErrors.model) {
+                        setFormErrors({ ...formErrors, model: '' });
+                      }
+                    }}
+                    placeholder="Modelo"
+                    error={formErrors.model}
+                  />
+                  {formErrors.model && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.model}</p>
+                  )}
+                </div>
+                <div>
+                  <Input
+                    value={form.year}
+                    onChange={e => {
+                      setForm({ ...form, year: e.target.value });
+                      if (formErrors.year) {
+                        setFormErrors({ ...formErrors, year: '' });
+                      }
+                    }}
+                    placeholder="Año"
+                    type="number"
+                    min="1900"
+                    max={new Date().getFullYear() + 1}
+                    error={formErrors.year}
+                  />
+                  {formErrors.year && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.year}</p>
+                  )}
+                </div>
+                <div>
+                  <Input
+                    value={form.kms}
+                    onChange={e => {
+                      setForm({ ...form, kms: e.target.value });
+                      if (formErrors.kms) {
+                        setFormErrors({ ...formErrors, kms: '' });
+                      }
+                    }}
+                    placeholder="Kilómetros"
+                    type="number"
+                    min="0"
+                    error={formErrors.kms}
+                  />
+                  {formErrors.kms && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.kms}</p>
+                  )}
+                </div>
+                <div>
+                  <Input
+                    value={form.chassis}
+                    onChange={e => {
+                      const value = e.target.value.toUpperCase();
+                      setForm({ ...form, chassis: value });
+                      if (formErrors.chassis) {
+                        setFormErrors({ ...formErrors, chassis: '' });
+                      }
+                    }}
+                    placeholder="Número de Chasis (17 caracteres)"
+                    maxLength="17"
+                    error={formErrors.chassis}
+                  />
+                  {formErrors.chassis && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.chassis}</p>
+                  )}
+                </div>
               </div>
             </CardContent>
             <CardFooter className="flex justify-end space-x-3">
               <Button
                 variant="secondary"
-                onClick={() => setShowAdd(false)}
+                onClick={() => {
+                  setShowAdd(false);
+                  setForm({ licensePlate: '', brand: '', model: '', year: '', kms: '', chassis: '' });
+                  setFormErrors({});
+                }}
                 leftIcon={<X className="h-4 w-4" />}
               >
                 Cancelar
@@ -288,7 +394,7 @@ const ClienteHome = () => {
                           <h3 className="text-lg font-semibold text-gray-900">
                             {car.licensePlate}
                           </h3>
-                          <Badge 
+                          <Badge
                             variant={getStatusVariant(car.statusId)}
                             size="sm"
                           >
@@ -296,17 +402,11 @@ const ClienteHome = () => {
                             <span className="ml-1">{car.status?.name || 'Sin estado'}</span>
                           </Badge>
                         </div>
-                        <p className="text-gray-600">
-                          {car.brand} {car.model} {car.year && `(${car.year})`}
-                        </p>
-                        {car.kms && (
-                          <p className="text-sm text-gray-500">
-                            {car.kms.toLocaleString()} km
-                          </p>
-                        )}
+
+
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center space-x-2">
                       <Button
                         variant="ghost"
@@ -316,7 +416,7 @@ const ClienteHome = () => {
                       >
                         Ver Detalles
                       </Button>
-                      
+
                       {/* Botón de solicitar mecánico - solo visible si está en estado "Entrada" */}
                       {car.statusId === getConstants().CAR_STATUS.ENTRADA ? (
                         <Button
@@ -337,7 +437,7 @@ const ClienteHome = () => {
                           Solicitar Mecánico
                         </Button>
                       )}
-                      
+
                       {/* Botón de cancelar solicitud - solo visible si está en estado "Pendiente" */}
                       {car.statusId === getConstants().CAR_STATUS.PENDIENTE && (
                         <Button
@@ -351,7 +451,7 @@ const ClienteHome = () => {
                       )}
                     </div>
                   </div>
-                  
+
                   {/* Formulario de solicitud */}
                   {requestOpenId === car.id && (
                     <div className="mt-6 pt-6 border-t border-gray-200 animate-slide-down">
@@ -365,20 +465,20 @@ const ClienteHome = () => {
                           </label>
                           <textarea
                             value={requestForm.description}
-                            onChange={e => setRequestForm({...requestForm, description: e.target.value})}
+                            onChange={e => setRequestForm({ ...requestForm, description: e.target.value })}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                             placeholder="Describe el problema o servicio que necesitas..."
                             rows={3}
                           />
                         </div>
-                        
+
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             Mecánico preferido (opcional)
                           </label>
                           <select
                             value={requestForm.preferredMechanicId}
-                            onChange={e => setRequestForm({...requestForm, preferredMechanicId: e.target.value})}
+                            onChange={e => setRequestForm({ ...requestForm, preferredMechanicId: e.target.value })}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                           >
                             <option value="">Sin preferencia</option>
@@ -387,7 +487,7 @@ const ClienteHome = () => {
                             ))}
                           </select>
                         </div>
-                        
+
                         <div className="flex justify-end space-x-3">
                           <Button
                             variant="secondary"
@@ -415,9 +515,9 @@ const ClienteHome = () => {
 
       {/* Modal de detalles del vehículo */}
       {detailCarId && (
-        <CarDetailModal 
-          car={cars.find(c => c.id === detailCarId)} 
-          onClose={() => setDetailCarId(null)} 
+        <CarDetailModal
+          car={cars.find(c => c.id === detailCarId)}
+          onClose={() => setDetailCarId(null)}
         />
       )}
 
@@ -431,22 +531,22 @@ const ClienteHome = () => {
             <ModalTitle>Confirmar Cancelación</ModalTitle>
           </div>
         </ModalHeader>
-        
+
         <ModalContent>
           <p className="text-gray-700">
             ¿Estás seguro de que deseas cancelar esta solicitud? Esta acción no se puede deshacer.
           </p>
         </ModalContent>
-        
+
         <ModalFooter>
-          <Button 
-            variant="secondary" 
+          <Button
+            variant="secondary"
             onClick={() => setShowCancelConfirm(false)}
           >
             No, mantener solicitud
           </Button>
-          <Button 
-            variant="danger" 
+          <Button
+            variant="danger"
             onClick={cancelRequest}
             leftIcon={<X className="h-4 w-4" />}
           >
@@ -464,7 +564,7 @@ export default ClienteHome;
 
 const CarDetailModal = ({ car, onClose }) => {
   if (!car) return null;
-  
+
   const getStatusIcon = (statusId) => {
     if (statusId === 1) return <Car className="h-4 w-4" />;
     if (statusId === 2) return <Clock className="h-4 w-4" />;
@@ -494,7 +594,7 @@ const CarDetailModal = ({ car, onClose }) => {
           </div>
         </div>
       </ModalHeader>
-      
+
       <ModalContent>
         <div className="space-y-6">
           {/* Información básica */}
@@ -510,26 +610,20 @@ const CarDetailModal = ({ car, onClose }) => {
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">Año</label>
-                <p className="text-lg font-semibold text-gray-900">{car.year || 'No especificado'}</p>
+                <p className="text-lg font-semibold text-gray-900">{car.year}</p>
               </div>
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-gray-500">Kilómetros</label>
                 <p className="text-lg font-semibold text-gray-900">
-                  {car.kms ? car.kms.toLocaleString() : 'No especificado'}
+                  {car.kms.toLocaleString()}
                 </p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">Número de Chasis</label>
-                <p className="text-lg font-semibold text-gray-900">{car.chassis || 'No especificado'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500">Prioridad</label>
-                <p className="text-lg font-semibold text-gray-900">
-                  {car.priority === 1 ? 'Normal' : car.priority === 2 ? 'Alta' : 'Baja'}
-                </p>
+                <p className="text-lg font-semibold text-gray-900">{car.chassis}</p>
               </div>
             </div>
           </div>
@@ -540,7 +634,7 @@ const CarDetailModal = ({ car, onClose }) => {
               <div>
                 <label className="text-sm font-medium text-gray-500">Estado Actual</label>
                 <div className="flex items-center space-x-2 mt-1">
-                  <Badge 
+                  <Badge
                     variant={getStatusVariant(car.statusId)}
                     size="md"
                   >
@@ -549,7 +643,7 @@ const CarDetailModal = ({ car, onClose }) => {
                   </Badge>
                 </div>
               </div>
-              
+
               {car.estimatedDate && (
                 <div className="text-right">
                   <label className="text-sm font-medium text-gray-500">Fecha Estimada</label>
@@ -572,7 +666,7 @@ const CarDetailModal = ({ car, onClose }) => {
           )}
         </div>
       </ModalContent>
-      
+
       <ModalFooter>
         <Button variant="secondary" onClick={onClose}>
           Cerrar

@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button, Badge } from './ui';
-import { 
-  Menu, 
-  X, 
-  ChevronDown, 
-  History, 
-  LogOut, 
+import {
+  Menu,
+  X,
+  ChevronDown,
+  History,
+  LogOut,
   HelpCircle,
   User,
   Wrench,
@@ -68,21 +68,21 @@ const NavBar = ({ roleBadge, showHistory = false, onHistoryClick }) => {
           {/* Logo y marca */}
           <div className="flex items-center space-x-3">
             <div className="flex-shrink-0">
-              <img 
-                src="/logo.png" 
-                alt="Logo" 
+              <img
+                src="/logo.png"
+                alt="Logo"
                 className="h-8 w-8 rounded-lg"
               />
             </div>
-            <button 
+            <button
               onClick={() => navigate('/home')}
               className="text-xl font-bold text-gray-900 hover:text-red-600 transition-colors duration-200"
             >
               Taller Interestellar
             </button>
             {roleBadge && (
-              <Badge 
-                variant={getRoleColor(roleKey)} 
+              <Badge
+                variant={getRoleColor(roleKey)}
                 size="sm"
                 className="ml-2"
               >
@@ -140,10 +140,10 @@ const NavBar = ({ roleBadge, showHistory = false, onHistoryClick }) => {
                     <p className="text-sm font-medium text-gray-900">{user?.name || 'Usuario'}</p>
                     <p className="text-xs text-gray-500">{user?.email}</p>
                   </div>
-                  
+
                   <div className="py-1">
                     {roleKey === 'cliente' && (
-                      <button 
+                      <button
                         onClick={() => {
                           setIsProfileOpen(false);
                           navigate('/configuracion');
@@ -154,9 +154,9 @@ const NavBar = ({ roleBadge, showHistory = false, onHistoryClick }) => {
                         Configuración
                       </button>
                     )}
-                    
+
                     {showHistory && (
-                      <button 
+                      <button
                         onClick={() => {
                           setIsProfileOpen(false);
                           onHistoryClick?.();
@@ -167,9 +167,9 @@ const NavBar = ({ roleBadge, showHistory = false, onHistoryClick }) => {
                         Historial
                       </button>
                     )}
-                    
+
                     {roleKey === 'admin' && (
-                      <button 
+                      <button
                         onClick={() => {
                           setIsProfileOpen(false);
                           navigate('/home/admin/historial');
@@ -180,8 +180,8 @@ const NavBar = ({ roleBadge, showHistory = false, onHistoryClick }) => {
                         Historial
                       </button>
                     )}
-                    
-                    <button 
+
+                    <button
                       onClick={() => {
                         setIsProfileOpen(false);
                         handleLogout();
@@ -217,7 +217,7 @@ const NavBar = ({ roleBadge, showHistory = false, onHistoryClick }) => {
         {isMenuOpen && (
           <div className="md:hidden border-t border-gray-200 py-4 animate-slide-down">
             <div className="space-y-2">
-              <button 
+              <button
                 onClick={() => {
                   setIsMenuOpen(false);
                   if (roleKey === 'jefe') {
@@ -239,9 +239,9 @@ const NavBar = ({ roleBadge, showHistory = false, onHistoryClick }) => {
                 <HelpCircle className="h-4 w-4 mr-3" />
                 Ayuda
               </button>
-              
+
               {roleKey === 'cliente' && (
-                <button 
+                <button
                   onClick={() => {
                     setIsMenuOpen(false);
                     navigate('/configuracion');
@@ -252,9 +252,9 @@ const NavBar = ({ roleBadge, showHistory = false, onHistoryClick }) => {
                   Configuración
                 </button>
               )}
-              
+
               {showHistory && (
-                <button 
+                <button
                   onClick={() => {
                     setIsMenuOpen(false);
                     onHistoryClick?.();
@@ -265,8 +265,8 @@ const NavBar = ({ roleBadge, showHistory = false, onHistoryClick }) => {
                   Historial
                 </button>
               )}
-              
-              <button 
+
+              <button
                 onClick={() => {
                   setIsMenuOpen(false);
                   handleLogout();

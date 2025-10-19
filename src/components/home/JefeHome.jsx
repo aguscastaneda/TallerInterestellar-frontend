@@ -18,18 +18,18 @@ const JefeHome = () => {
   const [requests, setRequests] = useState([]);
   const [mechanics, setMechanics] = useState([]);
   const [loading, setLoading] = useState(false);
-  
-  // Estados para filtros dinámicos
+
+
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedMechanic, setSelectedMechanic] = useState('all');
-  
-  // Estados para formularios
+
+
   const [showCreateMechanic, setShowCreateMechanic] = useState(false);
   const [showEditMechanic, setShowEditMechanic] = useState(false);
   const [editingMechanic, setEditingMechanic] = useState(null);
   const [showMechanicDetails, setShowMechanicDetails] = useState(null);
-  
-  // Formularios
+
+
   const [createForm, setCreateForm] = useState({
     name: '',
     lastName: '',
@@ -57,30 +57,30 @@ const JefeHome = () => {
         usersService.getMechanics()
       ]);
       console.log('Respuesta de mecánicos:', mechsRes.data);
-      // Filter out cancelled requests
+
       const filteredRequests = (reqRes.data.data || []).filter(r => r.status !== 'CANCELLED');
       setRequests(filteredRequests);
       const filteredMechanics = (mechsRes.data.data || []).filter(m => m.bossId === bossId);
       console.log('Mecánicos filtrados para este jefe:', filteredMechanics);
       setMechanics(filteredMechanics);
-    } catch (error) { 
+    } catch (error) {
       console.error('Error cargando datos:', error);
-      toast.error(error.response?.data?.message || 'Error cargando datos'); 
+      toast.error(error.response?.data?.message || 'Error cargando datos');
     } finally {
       setLoading(false);
     }
   };
 
-  // Load data on component mount
-  useEffect(() => { 
-    load(); 
-    
-    // Set up periodic refresh every 30 seconds
+
+  useEffect(() => {
+    load();
+
+
     const interval = setInterval(() => {
       load();
     }, 30000);
-    
-    // Clean up interval on component unmount
+
+
     return () => clearInterval(interval);
   }, [bossId]);
 
@@ -95,25 +95,25 @@ const JefeHome = () => {
     catch (error) { toast.error(error.response?.data?.message || 'Error al asignar'); }
   };
 
-  // Funciones para manejar mecánicos
+
   const handleCreateMechanic = async () => {
     try {
-      // Validate form data
+
       const validation = validateMechanicCreationForm(createForm, bossId);
-      
+
       if (!validation.isValid) {
         validation.errors.forEach(error => toast.error(error));
         return;
       }
-      
+
       const mechanicData = {
         ...createForm,
-        roleId: 2, // Mecánico
+        roleId: 2,
         bossId: bossId
       };
-      
+
       await usersService.create(mechanicData);
-      
+
       toast.success('Mecánico creado correctamente');
       setShowCreateMechanic(false);
       setCreateForm({ name: '', lastName: '', email: '', password: '', phone: '', cuil: '' });
@@ -166,7 +166,7 @@ const JefeHome = () => {
       const response = await usersService.delete(userId);
       console.log('Respuesta del servidor:', response.data);
       toast.success('Mecánico eliminado correctamente');
-      // Forzar recarga de datos
+
       await load();
     } catch (e) {
       console.error('Error al eliminar mecánico:', e);
@@ -174,7 +174,7 @@ const JefeHome = () => {
     }
   };
 
-  // Funciones auxiliares
+
   const getStatusIcon = (status) => {
     if (status === 'PENDING') return <Clock className="h-4 w-4" />;
     if (status === 'ASSIGNED') return <Eye className="h-4 w-4" />;
@@ -193,27 +193,27 @@ const JefeHome = () => {
 
   const getStatusCount = (status) => {
     if (status === 'all') {
-      return requests.filter(r => ['ASSIGNED','IN_PROGRESS','COMPLETED'].includes(r.status)).length;
+      return requests.filter(r => ['ASSIGNED', 'IN_PROGRESS', 'COMPLETED'].includes(r.status)).length;
     }
     return requests.filter(r => r.status === status).length;
   };
 
   const getMechanicWorkCount = (mechanicId) => {
-    return requests.filter(r => r.assignedMechanic?.id === mechanicId && r.status === 'IN_PROGRESS').length;
+    return requests.filter(r => r.assignedMechanic?.id === mechanicId && ['ASSIGNED', 'IN_PROGRESS'].includes(r.status)).length;
   };
 
-  // Funciones de filtrado
+
   const getFilteredRequests = () => {
-    let filtered = requests.filter(r => ['ASSIGNED','IN_PROGRESS','COMPLETED'].includes(r.status));
-    
+    let filtered = requests.filter(r => ['ASSIGNED', 'IN_PROGRESS', 'COMPLETED'].includes(r.status));
+
     if (selectedStatus !== 'all') {
       filtered = filtered.filter(r => r.status === selectedStatus);
     }
-    
+
     if (selectedMechanic !== 'all') {
       filtered = filtered.filter(r => r.assignedMechanic?.id === parseInt(selectedMechanic));
     }
-    
+
     return filtered;
   };
 
@@ -224,7 +224,7 @@ const JefeHome = () => {
     return 'Sin preferencia';
   };
 
-  // Opciones para el SegmentedControl de estados
+
   const statusOptions = [
     {
       value: 'all',
@@ -268,7 +268,7 @@ const JefeHome = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <NavBar roleBadge={true} showHistory={false} />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8 text-center">
@@ -296,7 +296,7 @@ const JefeHome = () => {
                     placeholder="Ingresa la patente del vehículo"
                     className="flex-1 px-4 py-2 h-11 rounded-l-lg border border-gray-400 focus:outline-none focus:ring-2 focus:ring-red-600 text-black"
                   />
-                  <button 
+                  <button
                     onClick={doSearch}
                     className="px-6 h-11 bg-red-600 text-white font-medium rounded-r-lg hover:bg-red-700 transition"
                   >
@@ -343,7 +343,7 @@ const JefeHome = () => {
                 value: 'asignadas',
                 label: 'Solicitudes Asignadas',
                 icon: <Users className="h-4 w-4" />,
-                count: requests.filter(r => ['ASSIGNED','IN_PROGRESS','COMPLETED'].includes(r.status)).length
+                count: requests.filter(r => ['ASSIGNED', 'IN_PROGRESS', 'COMPLETED'].includes(r.status)).length
               },
               {
                 value: 'mis-mecanicos',
@@ -408,8 +408,8 @@ const JefeHome = () => {
                             </div>
                           </div>
                           <div className="flex-shrink-0 ml-4">
-                            <select 
-                              onChange={e => assignMechanic(r.id, parseInt(e.target.value))} 
+                            <select
+                              onChange={e => assignMechanic(r.id, parseInt(e.target.value))}
                               className="input-base"
                               defaultValue=""
                             >
@@ -435,7 +435,7 @@ const JefeHome = () => {
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-gray-900">Solicitudes Asignadas</h2>
                 <div className="flex items-center space-x-4">
-                  <select 
+                  <select
                     value={selectedMechanic}
                     onChange={(e) => setSelectedMechanic(e.target.value)}
                     className="input-base"
@@ -469,7 +469,7 @@ const JefeHome = () => {
                       No hay solicitudes asignadas
                     </h3>
                     <p className="text-gray-600">
-                      {selectedStatus === 'all' 
+                      {selectedStatus === 'all'
                         ? 'No hay solicitudes asignadas con los filtros seleccionados'
                         : 'No hay solicitudes en el estado seleccionado'
                       }
@@ -608,7 +608,7 @@ const JefeHome = () => {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-gray-900">Mis Mecánicos</h2>
-                <Button 
+                <Button
                   onClick={() => setShowCreateMechanic(true)}
                   variant="primary"
                   leftIcon={<Plus className="h-4 w-4" />}
@@ -731,19 +731,19 @@ const JefeHome = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
                 value={createForm.name}
-                onChange={(e) => setCreateForm({...createForm, name: e.target.value})}
+                onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
                 placeholder="Nombre"
                 label="Nombre"
               />
               <Input
                 value={createForm.lastName}
-                onChange={(e) => setCreateForm({...createForm, lastName: e.target.value})}
+                onChange={(e) => setCreateForm({ ...createForm, lastName: e.target.value })}
                 placeholder="Apellido"
                 label="Apellido"
               />
               <Input
                 value={createForm.email}
-                onChange={(e) => setCreateForm({...createForm, email: e.target.value})}
+                onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
                 placeholder="Email"
                 type="email"
                 label="Email"
@@ -751,21 +751,21 @@ const JefeHome = () => {
               />
               <Input
                 value={createForm.password}
-                onChange={(e) => setCreateForm({...createForm, password: e.target.value})}
+                onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
                 placeholder="Contraseña"
                 type="password"
                 label="Contraseña"
               />
               <Input
                 value={createForm.phone}
-                onChange={(e) => setCreateForm({...createForm, phone: e.target.value})}
+                onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
                 placeholder="Teléfono"
                 label="Teléfono"
                 leftIcon={<Phone className="h-4 w-4" />}
               />
               <Input
                 value={createForm.cuil}
-                onChange={(e) => setCreateForm({...createForm, cuil: e.target.value})}
+                onChange={(e) => setCreateForm({ ...createForm, cuil: e.target.value })}
                 placeholder="CUIL"
                 label="CUIL"
                 leftIcon={<Shield className="h-4 w-4" />}
@@ -800,19 +800,19 @@ const JefeHome = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
                 value={editForm.name}
-                onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
                 placeholder="Nombre"
                 label="Nombre"
               />
               <Input
                 value={editForm.lastName}
-                onChange={(e) => setEditForm({...editForm, lastName: e.target.value})}
+                onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
                 placeholder="Apellido"
                 label="Apellido"
               />
               <Input
                 value={editForm.email}
-                onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
                 placeholder="Email"
                 type="email"
                 label="Email"
@@ -820,21 +820,21 @@ const JefeHome = () => {
               />
               <Input
                 value={editForm.password}
-                onChange={(e) => setEditForm({...editForm, password: e.target.value})}
+                onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
                 placeholder="Nueva contraseña (opcional)"
                 type="password"
                 label="Nueva contraseña"
               />
               <Input
                 value={editForm.phone}
-                onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
+                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
                 placeholder="Teléfono"
                 label="Teléfono"
                 leftIcon={<Phone className="h-4 w-4" />}
               />
               <Input
                 value={editForm.cuil}
-                onChange={(e) => setEditForm({...editForm, cuil: e.target.value})}
+                onChange={(e) => setEditForm({ ...editForm, cuil: e.target.value })}
                 placeholder="CUIL"
                 label="CUIL"
                 leftIcon={<Shield className="h-4 w-4" />}

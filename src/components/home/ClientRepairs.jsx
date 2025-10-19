@@ -11,7 +11,7 @@ const ClientRepairs = () => {
   const { user } = useAuth();
   const { config, translateServiceRequestStatus } = useConfig();
   const [cars, setCars] = useState([]);
-  const [allCars, setAllCars] = useState([]); // Para mantener todos los autos
+  const [allCars, setAllCars] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [loading, setLoading] = useState(true);
 
@@ -25,21 +25,18 @@ const ClientRepairs = () => {
 
     try {
       console.log('Iniciando pago para reparación:', repair.id, 'con costo:', repair.cost);
-      
+
       const response = await paymentsService.createMercadoPagoPreference(repair.id, user.client.id);
-      
+
       if (response.data.success) {
         const { sandboxInitPoint, initPoint, simulation } = response.data.data;
-        // Usar sandbox para testing, init_point para producción
         const paymentUrl = sandboxInitPoint || initPoint;
-        
+
         if (paymentUrl) {
           if (simulation) {
-            // Para simulación, redirigir directamente
             toast.info('Modo simulación: MercadoPago no configurado');
             window.location.href = paymentUrl;
           } else {
-            // Redirigir a MercadoPago real
             window.open(paymentUrl, '_blank');
             toast.success('Redirigiendo a MercadoPago...');
           }
@@ -49,8 +46,7 @@ const ClientRepairs = () => {
       }
     } catch (error) {
       console.error('Error al crear preferencia de pago:', error);
-      
-      // Manejar diferentes tipos de errores
+
       if (error.response?.data?.error === 'MERCADOPAGO_NOT_CONFIGURED') {
         toast.error('El sistema de pagos no está configurado. Contacte al administrador.');
       } else if (error.response?.data?.message) {
@@ -63,12 +59,12 @@ const ClientRepairs = () => {
 
   const loadRepairs = async () => {
     if (!clientId) return;
-    
+
     try {
       setLoading(true);
       const response = await clientRepairsService.getRepairs(clientId);
-      setAllCars(response.data.data.cars); // Guardar todos los autos
-      setCars(response.data.data.cars); // Mostrar todos inicialmente
+      setAllCars(response.data.data.cars);
+      setCars(response.data.data.cars);
     } catch (error) {
       console.error('Error cargando arreglos:', error);
       toast.error('Error cargando arreglos');
@@ -80,33 +76,28 @@ const ClientRepairs = () => {
   const handleStatusFilter = (statusId) => {
     setSelectedStatus(statusId);
     if (statusId === 'all') {
-      setCars(allCars); // Usar todos los autos guardados
+      setCars(allCars);
     } else {
-      // Filtrar localmente en lugar de hacer otra petición
       const filteredCars = allCars.filter(car => car.statusId === statusId);
       setCars(filteredCars);
     }
   };
 
-  // Load data on component mount
-  useEffect(() => { 
-    loadRepairs(); 
-    
-    // Set up periodic refresh every 30 seconds
+  useEffect(() => {
+    loadRepairs();
+
     const interval = setInterval(() => {
       loadRepairs();
     }, 30000);
-    
-    // Clean up interval on component unmount
+
     return () => clearInterval(interval);
   }, [clientId]);
 
-  // Manejar parámetros de retorno de MercadoPago
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const paymentStatus = urlParams.get('payment');
     const isSimulation = urlParams.get('simulation');
-    
+
     if (paymentStatus) {
       switch (paymentStatus) {
         case 'success':
@@ -123,8 +114,7 @@ const ClientRepairs = () => {
           toast.info('Tu pago está siendo procesado');
           break;
       }
-      
-      // Limpiar los parámetros de la URL
+
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
@@ -167,9 +157,9 @@ const ClientRepairs = () => {
   };
 
   const tabOptions = [
-    { 
-      value: 'all', 
-      label: 'Todos', 
+    {
+      value: 'all',
+      label: 'Todos',
       icon: <Car className="h-4 w-4" />,
       count: getStatusCount('all')
     },
@@ -197,7 +187,7 @@ const ClientRepairs = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <NavBar roleBadge={true} showHistory={false} />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -226,13 +216,13 @@ const ClientRepairs = () => {
               <CardContent>
                 <Car className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  {selectedStatus === 'all' 
-                    ? 'No tienes vehículos registrados' 
+                  {selectedStatus === 'all'
+                    ? 'No tienes vehículos registrados'
                     : 'No hay vehículos en este estado'
                   }
                 </h3>
                 <p className="text-gray-600">
-                  {selectedStatus === 'all' 
+                  {selectedStatus === 'all'
                     ? 'Registra tu primer vehículo para comenzar a solicitar servicios'
                     : 'No hay vehículos en el estado seleccionado'
                   }
@@ -254,7 +244,7 @@ const ClientRepairs = () => {
                           <h3 className="text-xl font-bold text-gray-900">
                             {car.licensePlate}
                           </h3>
-                          <Badge 
+                          <Badge
                             variant={getStatusVariant(car.statusId)}
                             size="md"
                           >
@@ -263,7 +253,7 @@ const ClientRepairs = () => {
                           </Badge>
                         </div>
                         <p className="text-gray-600">
-                          {car.brand} {car.model}
+                          {car.brand} {car.model} {car.year && `(${car.year})`}
                         </p>
                       </div>
                     </div>
@@ -282,10 +272,10 @@ const ClientRepairs = () => {
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-gray-500">Vehículo</p>
-                        <p className="text-gray-900 truncate">{car.brand} {car.model}</p>
+                        <p className="text-gray-900 truncate">{car.brand} {car.model} {car.year && `(${car.year})`}</p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center space-x-3 min-w-0">
                       <div className="h-8 w-8 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
                         <User className="h-4 w-4 text-green-600" />
@@ -293,35 +283,16 @@ const ClientRepairs = () => {
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-gray-500">Mecánico</p>
                         <p className="text-gray-900 truncate">
-                          {car.mechanic?.user 
+                          {car.mechanic?.user
                             ? `${car.mechanic.user.name} ${car.mechanic.user.lastName}`
                             : 'No asignado'
                           }
                         </p>
                       </div>
                     </div>
-                    
-                    <div className="flex items-center space-x-3 min-w-0 sm:col-span-2 lg:col-span-1">
-                      <div className="h-8 w-8 rounded-lg bg-yellow-100 flex items-center justify-center flex-shrink-0">
-                        <Settings className="h-4 w-4 text-yellow-600" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-gray-500">Prioridad</p>
-                        <p className="text-gray-900 truncate">{car.priority}</p>
-                      </div>
-                    </div>
+
                   </div>
 
-                  {/* Descripción del problema */}
-                  {car.description && (
-                    <div className="mb-6 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-400">
-                      <h4 className="font-medium text-gray-900 mb-2 flex items-center">
-                        <AlertCircle className="h-4 w-4 mr-2 text-blue-600" />
-                        Descripción del problema
-                      </h4>
-                      <p className="text-gray-700">{car.description}</p>
-                    </div>
-                  )}
 
                   {/* Reparaciones realizadas */}
                   {car.repairs && car.repairs.length > 0 && (
@@ -387,12 +358,12 @@ const ClientRepairs = () => {
                             <CardContent className="p-4">
                               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 space-y-2 sm:space-y-0">
                                 <h5 className="font-medium text-gray-900">Solicitud #{index + 1}</h5>
-                                <Badge 
+                                <Badge
                                   variant={
                                     request.status === 'PENDING' ? 'warning' :
-                                    request.status === 'ASSIGNED' ? 'info' :
-                                    request.status === 'IN_PROGRESS' ? 'info' :
-                                    request.status === 'COMPLETED' ? 'success' : 'neutral'
+                                      request.status === 'ASSIGNED' ? 'info' :
+                                        request.status === 'IN_PROGRESS' ? 'info' :
+                                          request.status === 'COMPLETED' ? 'success' : 'neutral'
                                   }
                                   size="sm"
                                 >
@@ -404,7 +375,7 @@ const ClientRepairs = () => {
                                 <span className="flex items-center">
                                   <User className="h-3 w-3 mr-1 flex-shrink-0" />
                                   <span className="truncate">
-                                    {request.assignedMechanic?.user 
+                                    {request.assignedMechanic?.user
                                       ? `${request.assignedMechanic.user.name} ${request.assignedMechanic.user.lastName}`
                                       : 'Pendiente de asignación'
                                     }

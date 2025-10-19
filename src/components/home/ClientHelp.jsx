@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import NavBar from '../NavBar';
 import { Card, CardHeader, CardTitle, CardContent, Badge, Button } from '../ui';
-import { 
-  Car, 
-  Wrench, 
-  FileText, 
-  History, 
-  Plus, 
-  Clock, 
+import {
+  Car,
+  Wrench,
+  FileText,
+  History,
+  Plus,
+  Clock,
   CheckCircle,
   ArrowLeft,
   BookOpen,
@@ -42,7 +42,7 @@ const ClientHelp = () => {
                 Manual del Cliente
               </h2>
               <p className="text-gray-600 max-w-2xl mx-auto">
-                Esta guía te ayudará a navegar todas las funcionalidades disponibles 
+                Esta guía te ayudará a navegar todas las funcionalidades disponibles
                 en tu panel de cliente del taller interestelar.
               </p>
             </div>
@@ -152,7 +152,7 @@ const ClientHelp = () => {
                   <p className="text-gray-600">
                     Para agregar un nuevo vehículo a tu cuenta:
                   </p>
-                  
+
                   <ol className="space-y-2 text-sm text-gray-600">
                     <li>1. Haz clic en el botón <Badge variant="primary">Registrar Patente</Badge></li>
                     <li>2. Completa la información del vehículo</li>
@@ -201,7 +201,7 @@ const ClientHelp = () => {
                   <p className="text-gray-600">
                     Para solicitar atención mecánica para tu vehículo:
                   </p>
-                  
+
                   <div className="bg-blue-50 p-4 rounded-lg">
                     <h4 className="font-semibold text-blue-900 mb-2">Pasos a seguir:</h4>
                     <ol className="space-y-1 text-sm text-blue-800">
@@ -216,7 +216,7 @@ const ClientHelp = () => {
                   <div className="bg-yellow-50 p-4 rounded-lg">
                     <h4 className="font-semibold text-yellow-900 mb-2">Importante:</h4>
                     <p className="text-sm text-yellow-800">
-                      No podrás solicitar un nuevo servicio si tu vehículo tiene un trabajo 
+                      No podrás solicitar un nuevo servicio si tu vehículo tiene un trabajo
                       &quot;En Espera&quot; o &quot;En Reparación&quot;. Debes esperar a que el proceso actual finalice.
                     </p>
                   </div>
@@ -381,7 +381,7 @@ const ClientHelp = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-600">
-                    Si continúas teniendo problemas, contacta al administrador del sistema 
+                    Si continúas teniendo problemas, contacta al administrador del sistema
                     o al equipo de soporte técnico para obtener ayuda adicional.
                   </p>
                 </CardContent>
@@ -398,7 +398,7 @@ const ClientHelp = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <NavBar roleBadge={true} showHistory={false} />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -437,11 +437,10 @@ const ClientHelp = () => {
                       <button
                         key={section.id}
                         onClick={() => setActiveSection(section.id)}
-                        className={`w-full flex items-center space-x-3 px-4 py-3 text-left transition-colors duration-150 ${
-                          activeSection === section.id
+                        className={`w-full flex items-center space-x-3 px-4 py-3 text-left transition-colors duration-150 ${activeSection === section.id
                             ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
                             : 'text-gray-600 hover:bg-gray-50'
-                        }`}
+                          }`}
                       >
                         <Icon className="h-4 w-4" />
                         <span className="text-sm font-medium">{section.title}</span>

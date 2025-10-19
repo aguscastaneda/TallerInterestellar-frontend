@@ -25,10 +25,9 @@ import UserConfiguration from './components/UserConfiguration';
 import AcceptBudget from './components/home/AcceptBudget';
 import RejectBudget from './components/home/RejectBudget';
 
-// Componente para proteger rutas
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
-  
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -47,10 +46,9 @@ ProtectedRoute.propTypes = {
   children: PropTypes.node.isRequired,
 };
 
-// Componente para rutas públicas (redirige si ya está autenticado)
 const PublicRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
-  
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -61,7 +59,7 @@ const PublicRoute = ({ children }) => {
       </div>
     );
   }
-  
+
   return !isAuthenticated ? children : <Navigate to="/home" replace />;
 };
 
@@ -69,7 +67,6 @@ PublicRoute.propTypes = {
   children: PropTypes.node.isRequired,
 };
 
-// Redirección a la home según rol
 const RoleHomeRedirect = () => {
   const { roleKey } = useAuth();
   const map = {
@@ -83,177 +80,175 @@ const RoleHomeRedirect = () => {
   return <Navigate to={target} replace />;
 };
 
-// Component to set the navigate function for API
 const NavigateSetter = () => {
   const navigate = useNavigate();
-  
-  // Set the navigate function for API interceptors
+
   setNavigateFunction(navigate);
-  
-  return null; // This component doesn't render anything
+
+  return null;
 };
 
 const AppRoutes = () => {
   return (
     <Routes>
-      <Route 
-        path="/login" 
+      <Route
+        path="/login"
         element={
           <PublicRoute>
             <Login />
           </PublicRoute>
-        } 
+        }
       />
-      <Route 
-        path="/register" 
+      <Route
+        path="/register"
         element={
           <PublicRoute>
             <Register />
           </PublicRoute>
-        } 
+        }
       />
-      <Route 
-        path="/forgot-password" 
-        element={<ForgotPassword />} 
+      <Route
+        path="/forgot-password"
+        element={<ForgotPassword />}
       />
-      <Route 
-        path="/reset-password" 
+      <Route
+        path="/reset-password"
         element={
           <PublicRoute>
             <ResetPassword />
           </PublicRoute>
-        } 
+        }
       />
-      <Route 
-        path="/home" 
+      <Route
+        path="/home"
         element={
           <ProtectedRoute>
             <RoleHomeRedirect />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/home/cliente" 
+      <Route
+        path="/home/cliente"
         element={
           <ProtectedRoute>
             <ClienteHome />
           </ProtectedRoute>
         }
       />
-      <Route 
-        path="/home/client/help" 
+      <Route
+        path="/home/client/help"
         element={
           <ProtectedRoute>
             <ClientHelp />
           </ProtectedRoute>
         }
       />
-      <Route 
-        path="/home/jefe/help" 
+      <Route
+        path="/home/jefe/help"
         element={
           <ProtectedRoute>
             <JefeHelp />
           </ProtectedRoute>
         }
       />
-      <Route 
-        path="/home/mecanico/help" 
+      <Route
+        path="/home/mecanico/help"
         element={
           <ProtectedRoute>
             <MechanicHelp />
           </ProtectedRoute>
         }
       />
-      <Route 
-        path="/home/admin/help" 
+      <Route
+        path="/home/admin/help"
         element={
           <ProtectedRoute>
             <AdminHelp />
           </ProtectedRoute>
         }
       />
-      <Route 
-        path="/home/recepcionista/help" 
+      <Route
+        path="/home/recepcionista/help"
         element={
           <ProtectedRoute>
             <ReceptionistHelp />
           </ProtectedRoute>
         }
       />
-      <Route 
-        path="/home/admin/historial" 
+      <Route
+        path="/home/admin/historial"
         element={
           <ProtectedRoute>
             <AdminHistorial />
           </ProtectedRoute>
         }
       />
-      <Route 
-        path="/home/client/repairs" 
+      <Route
+        path="/home/client/repairs"
         element={
           <ProtectedRoute>
             <ClientRepairs />
           </ProtectedRoute>
         }
       />
-      <Route 
-        path="/home/mecanico/mis-arreglos" 
+      <Route
+        path="/home/mecanico/mis-arreglos"
         element={
           <ProtectedRoute>
             <MechanicRepairs />
           </ProtectedRoute>
         }
       />
-      <Route 
-        path="/home/mecanico" 
+      <Route
+        path="/home/mecanico"
         element={
           <ProtectedRoute>
             <MecanicoHome />
           </ProtectedRoute>
         }
       />
-      <Route 
-        path="/home/jefe" 
+      <Route
+        path="/home/jefe"
         element={
           <ProtectedRoute>
             <JefeHome />
           </ProtectedRoute>
         }
       />
-      <Route 
-        path="/home/admin" 
+      <Route
+        path="/home/admin"
         element={
           <ProtectedRoute>
             <AdminHome />
           </ProtectedRoute>
         }
       />
-      <Route 
-        path="/home/recepcionista" 
+      <Route
+        path="/home/recepcionista"
         element={
           <ProtectedRoute>
             <RecepcionistaHome />
           </ProtectedRoute>
         }
       />
-      <Route 
-        path="/configuracion" 
+      <Route
+        path="/configuracion"
         element={
           <ProtectedRoute>
             <UserConfiguration />
           </ProtectedRoute>
         }
       />
-      <Route 
-        path="/accept-budget" 
+      <Route
+        path="/accept-budget"
         element={
           <ProtectedRoute>
             <AcceptBudget />
           </ProtectedRoute>
         }
       />
-      <Route 
-        path="/reject-budget" 
+      <Route
+        path="/reject-budget"
         element={
           <ProtectedRoute>
             <RejectBudget />
@@ -273,7 +268,7 @@ const App = () => {
         <Router>
           <NavigateSetter />
           <AppRoutes />
-          <Toaster 
+          <Toaster
             position="top-right"
             toastOptions={{
               duration: 4000,

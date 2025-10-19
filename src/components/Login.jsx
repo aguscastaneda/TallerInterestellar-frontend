@@ -9,7 +9,7 @@ import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(""); // Estado para manejar errores
+  const [error, setError] = useState("");
   const { login, checkAuth, roleKey } = useAuth();
   const navigate = useNavigate();
 
@@ -31,27 +31,27 @@ const Login = () => {
 
   const onSubmit = async (data) => {
     setIsLoading(true);
-    setError(""); // Limpiar errores previos
-    
+    setError("");
+
     try {
       const result = await login(data.email, data.password);
-      
+
       if (result.success) {
         toast.success('¡Login exitoso!');
-        // Asegura que el contexto tenga el usuario actualizado
+
         await checkAuth();
         const map = { cliente: '/home/cliente', mecanico: '/home/mecanico', jefe: '/home/jefe', admin: '/home/admin' };
         setTimeout(() => {
           navigate(map[roleKey] || '/home');
         }, 1000);
       } else {
-       
+
         setError(result.message || 'Error en el login');
         setIsLoading(false);
       }
     } catch (error) {
       console.error('Error en login:', error);
-    
+
       setError('Error en el servidor');
       setIsLoading(false);
     }
@@ -208,7 +208,7 @@ const Login = () => {
                     ¿Olvidaste tu contraseña?
                   </button>
                 </div>
-                
+
                 <div className="text-center">
                   <p className="text-sm text-gray-600">
                     ¿No tienes una cuenta?{' '}

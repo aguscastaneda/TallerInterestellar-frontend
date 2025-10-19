@@ -68,7 +68,7 @@ const RecepcionistaHome = () => {
   const getStatusColor = (statusId) => {
     const colors = {
       1: 'bg-gray-100 text-gray-800',
-      2: 'bg-yellow-100 text-yellow-800', 
+      2: 'bg-yellow-100 text-yellow-800',
       3: 'bg-blue-100 text-blue-800',
       4: 'bg-red-100 text-red-800',
       5: 'bg-purple-100 text-purple-800',
@@ -124,7 +124,7 @@ const RecepcionistaHome = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <NavBar roleBadge={true} showHistory={false} />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8 text-center">
@@ -153,7 +153,7 @@ const RecepcionistaHome = () => {
                     className="flex-1 px-4 py-2 h-11 rounded-l-lg border border-gray-400 focus:outline-none focus:ring-2 focus:ring-red-600 text-black"
                     onKeyPress={(e) => e.key === 'Enter' && doSearch()}
                   />
-                  <button 
+                  <button
                     onClick={doSearch}
                     className="px-6 h-11 bg-red-600 text-white font-medium rounded-r-lg hover:bg-red-700 transition"
                   >
@@ -162,7 +162,7 @@ const RecepcionistaHome = () => {
                 </div>
               </div>
             </div>
-            
+
             {searchResult && (
               <Card className="mt-6 bg-green-50 border-green-200">
                 <CardContent className="p-4">
@@ -232,7 +232,7 @@ const RecepcionistaHome = () => {
                   No hay vehículos
                 </h3>
                 <p className="text-gray-600">
-                  {selectedStatus === 'all' 
+                  {selectedStatus === 'all'
                     ? 'No hay vehículos registrados en el sistema'
                     : `No hay vehículos en estado ${config.carStatuses?.find(s => s.id === selectedStatus)?.name || 'seleccionado'}`
                   }
@@ -325,7 +325,7 @@ const RecepcionistaHome = () => {
                         <p className="text-gray-900">{showClientDetails.user?.email}</p>
                       </div>
                     </div>
-                    
+
                     {showClientDetails.user?.phone && (
                       <div className="flex items-center space-x-3">
                         <Phone className="h-5 w-5 text-gray-400" />
@@ -347,7 +347,7 @@ const RecepcionistaHome = () => {
                         </div>
                       </div>
                     )}
-                    
+
                     <div className="flex items-center space-x-3">
                       <Calendar className="h-5 w-5 text-gray-400" />
                       <div>
@@ -355,15 +355,15 @@ const RecepcionistaHome = () => {
                         <p className="text-gray-900">
                           {(() => {
                             try {
-                            
+
                               const dateValue = showClientDetails.user?.createdAt || showClientDetails.createdAt;
-                              
+
                               if (!dateValue) return 'Fecha no disponible';
-                              
+
                               const date = new Date(dateValue);
-                              
+
                               if (isNaN(date.getTime())) return 'Fecha no disponible';
-                              
+
                               return date.toLocaleDateString('es-ES');
                             } catch (error) {
                               console.error('Error parsing date:', error);

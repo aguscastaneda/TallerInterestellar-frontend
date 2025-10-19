@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import NavBar from '../NavBar';
 import { Card, CardHeader, CardTitle, CardContent, Button } from '../ui';
-import { 
-  Shield, 
-  Users, 
-  User, 
-  Search, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Eye, 
+import {
+  Shield,
+  Users,
+  User,
+  Search,
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
   Settings,
   ArrowLeft,
   BookOpen,
@@ -45,7 +45,7 @@ const AdminHelp = () => {
                 Manual del Administrador
               </h2>
               <p className="text-gray-600 max-w-2xl mx-auto">
-                Este manual te guiará a través de todas las funcionalidades administrativas 
+                Este manual te guiará a través de todas las funcionalidades administrativas
                 para gestionar eficientemente el sistema del taller.
               </p>
             </div>
@@ -159,7 +159,7 @@ const AdminHelp = () => {
                   <p className="text-gray-600">
                     Puedes crear usuarios para cualquier rol del sistema:
                   </p>
-                  
+
                   <div className="grid md:grid-cols-3 gap-4">
                     <div className="bg-green-50 p-4 rounded-lg">
                       <h4 className="font-semibold text-green-900 mb-2 flex items-center space-x-2">
@@ -216,7 +216,7 @@ const AdminHelp = () => {
                   <p className="text-gray-600">
                     Para cada usuario puedes realizar las siguientes acciones:
                   </p>
-                  
+
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="bg-green-50 p-4 rounded-lg">
                       <h4 className="font-semibold text-green-900 mb-2 flex items-center space-x-2">
@@ -287,10 +287,10 @@ const AdminHelp = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-gray-600">
-                    La herramienta de búsqueda te permite acceder rápidamente a información 
+                    La herramienta de búsqueda te permite acceder rápidamente a información
                     completa de cualquier vehículo registrado en el sistema.
                   </p>
-                  
+
                   <div className="bg-blue-50 p-4 rounded-lg">
                     <h4 className="font-semibold text-blue-900 mb-2">Pasos para buscar:</h4>
                     <ol className="space-y-1 text-sm text-blue-800">
@@ -352,7 +352,7 @@ const AdminHelp = () => {
                   <p className="text-gray-600">
                     El sistema maneja diferentes niveles de acceso según el rol asignado:
                   </p>
-                  
+
                   <div className="space-y-3">
                     <div className="bg-red-50 p-4 rounded-lg border-l-4 border-red-400">
                       <h4 className="font-semibold text-red-900 mb-2">Administrador</h4>
@@ -544,7 +544,7 @@ const AdminHelp = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-600">
-                    Si continúas teniendo problemas o necesitas asistencia técnica especializada, 
+                    Si continúas teniendo problemas o necesitas asistencia técnica especializada,
                     contacta al equipo de desarrollo del sistema para obtener soporte avanzado.
                   </p>
                 </CardContent>
@@ -561,7 +561,7 @@ const AdminHelp = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <NavBar roleBadge={true} showHistory={false} />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -600,11 +600,10 @@ const AdminHelp = () => {
                       <button
                         key={section.id}
                         onClick={() => setActiveSection(section.id)}
-                        className={`w-full flex items-center space-x-3 px-4 py-3 text-left transition-colors duration-150 ${
-                          activeSection === section.id
+                        className={`w-full flex items-center space-x-3 px-4 py-3 text-left transition-colors duration-150 ${activeSection === section.id
                             ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
                             : 'text-gray-600 hover:bg-gray-50'
-                        }`}
+                          }`}
                       >
                         <Icon className="h-4 w-4" />
                         <span className="text-sm font-medium">{section.title}</span>

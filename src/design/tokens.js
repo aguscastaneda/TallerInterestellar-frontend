@@ -1,8 +1,7 @@
-// Design Tokens - Sistema centralizado de variables de diseño
 export const designTokens = {
-  // Paleta de colores base
+
   colors: {
-    // Colores primarios
+
     black: {
       50: '#f8f8f8',
       100: '#f0f0f0',
@@ -14,83 +13,83 @@ export const designTokens = {
       700: '#404040',
       800: '#202020',
       900: '#1C1C1C',
-      950: '#000000', // Negro absoluto
+      950: '#000000',
     },
-    
-    // Gris metálico moderno
+
+
     metallic: {
       50: '#f8f9fa',
       100: '#f1f3f4',
       200: '#e8eaed',
       300: '#dadce0',
       400: '#bdc1c6',
-      500: '#B3B3B3', // Gris metálico base
+      500: '#B3B3B3',
       600: '#9aa0a6',
       700: '#80868b',
       800: '#5f6368',
       900: '#3c4043',
     },
-    
-    // Rojo intenso elegante
+
+
     red: {
       50: '#ffebee',
       100: '#ffcdd2',
       200: '#ef9a9a',
       300: '#e57373',
       400: '#ef5350',
-      500: '#D32F2F', // Rojo base
+      500: '#D32F2F',
       600: '#e53935',
       700: '#d32f2f',
       800: '#c62828',
       900: '#b71c1c',
     },
-    
-    // Rojo-naranja vibrante
+
+
     orange: {
       50: '#fff3e0',
       100: '#ffe0b2',
       200: '#ffcc80',
       300: '#ffb74d',
       400: '#ffa726',
-      500: '#FF5722', // Rojo-naranja base
+      500: '#FF5722',
       600: '#fb8c00',
       700: '#f57c00',
       800: '#ef6c00',
       900: '#e65100',
     },
-    
-    // Amarillo dorado
+
+
     yellow: {
       50: '#fffde7',
       100: '#fff9c4',
       200: '#fff59d',
       300: '#fff176',
       400: '#ffee58',
-      500: '#FFC107', // Amarillo dorado base
+      500: '#FFC107',
       600: '#fdd835',
       700: '#fbc02d',
       800: '#f9a825',
       900: '#f57f17',
     },
-    
-    // Verde moderno
+
+
     green: {
       50: '#e8f5e8',
       100: '#c8e6c9',
       200: '#a5d6a7',
       300: '#81c784',
       400: '#66bb6a',
-      500: '#4CAF50', // Verde base
+      500: '#4CAF50',
       600: '#43a047',
       700: '#388e3c',
       800: '#2e7d32',
       900: '#1b5e20',
     },
-    
-    // Blanco puro
+
+
     white: '#FFFFFF',
-    
-    // Colores semánticos
+
+
     semantic: {
       success: '#4CAF50',
       warning: '#FFC107',
@@ -98,8 +97,8 @@ export const designTokens = {
       info: '#2196F3',
       neutral: '#B3B3B3',
     },
-    
-    // Estados de componentes
+
+
     states: {
       hover: {
         primary: '#c62828',
@@ -122,8 +121,8 @@ export const designTokens = {
       },
     },
   },
-  
-  // Tipografía
+
+
   typography: {
     fontFamily: {
       sans: ['Inter', 'system-ui', 'sans-serif'],
@@ -150,8 +149,8 @@ export const designTokens = {
       extrabold: '800',
     },
   },
-  
-  // Espaciado
+
+
   spacing: {
     0: '0',
     1: '0.25rem',
@@ -184,8 +183,8 @@ export const designTokens = {
     80: '20rem',
     96: '24rem',
   },
-  
-  // Bordes y radios
+
+
   borderRadius: {
     none: '0',
     sm: '0.125rem',
@@ -197,8 +196,8 @@ export const designTokens = {
     '3xl': '1.5rem',
     full: '9999px',
   },
-  
-  // Sombras
+
+
   boxShadow: {
     sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
     base: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
@@ -209,8 +208,8 @@ export const designTokens = {
     inner: 'inset 0 2px 4px 0 rgb(0 0 0 / 0.05)',
     none: 'none',
   },
-  
-  // Transiciones
+
+
   transition: {
     duration: {
       fast: '150ms',
@@ -224,8 +223,8 @@ export const designTokens = {
       easeInOut: 'cubic-bezier(0.4, 0, 0.2, 1)',
     },
   },
-  
-  // Breakpoints
+
+
   breakpoints: {
     sm: '640px',
     md: '768px',
@@ -233,8 +232,8 @@ export const designTokens = {
     xl: '1280px',
     '2xl': '1536px',
   },
-  
-  // Z-index
+
+
   zIndex: {
     hide: -1,
     auto: 'auto',
@@ -252,7 +251,7 @@ export const designTokens = {
   },
 };
 
-// Función helper para obtener colores con opacidad
+
 export const getColorWithOpacity = (color, opacity = 1) => {
   if (color.startsWith('#')) {
     const hex = color.replace('#', '');
@@ -264,7 +263,7 @@ export const getColorWithOpacity = (color, opacity = 1) => {
   return color;
 };
 
-// Función helper para generar variantes de color
+
 export const generateColorVariants = (baseColor) => {
   return {
     50: getColorWithOpacity(baseColor, 0.05),

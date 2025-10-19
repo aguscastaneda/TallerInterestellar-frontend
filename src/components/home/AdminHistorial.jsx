@@ -77,13 +77,13 @@ const AdminHistorial = () => {
   const handleStatusFilter = (statusId) => {
     setSelectedStatus(statusId);
     let filteredRepairs = allRepairs;
-    
+
     if (statusId !== 'all') {
       filteredRepairs = allRepairs.filter(repair => repair.car?.statusId === statusId);
     }
-    
+
     if (searchQuery.trim()) {
-      filteredRepairs = filteredRepairs.filter(repair => 
+      filteredRepairs = filteredRepairs.filter(repair =>
         repair.car?.licensePlate?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         repair.car?.client?.user?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         repair.car?.client?.user?.lastName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -92,20 +92,20 @@ const AdminHistorial = () => {
         repair.description?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
-    
+
     setRepairs(filteredRepairs);
   };
 
   const handleSearch = (query) => {
     setSearchQuery(query);
     let filteredRepairs = allRepairs;
-    
+
     if (selectedStatus !== 'all') {
       filteredRepairs = allRepairs.filter(repair => repair.car?.statusId === selectedStatus);
     }
-    
+
     if (query.trim()) {
-      filteredRepairs = filteredRepairs.filter(repair => 
+      filteredRepairs = filteredRepairs.filter(repair =>
         repair.car?.licensePlate?.toLowerCase().includes(query.toLowerCase()) ||
         repair.car?.client?.user?.name?.toLowerCase().includes(query.toLowerCase()) ||
         repair.car?.client?.user?.lastName?.toLowerCase().includes(query.toLowerCase()) ||
@@ -114,7 +114,7 @@ const AdminHistorial = () => {
         repair.description?.toLowerCase().includes(query.toLowerCase())
       );
     }
-    
+
     setRepairs(filteredRepairs);
   };
 
@@ -153,7 +153,7 @@ const AdminHistorial = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <NavBar roleBadge={true} showHistory={false} />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -226,9 +226,9 @@ const AdminHistorial = () => {
                   No hay reparaciones
                 </h3>
                 <p className="text-gray-600">
-                  {searchQuery 
+                  {searchQuery
                     ? `No se encontraron reparaciones que coincidan con "${searchQuery}"`
-                    : selectedStatus === 'all' 
+                    : selectedStatus === 'all'
                       ? 'No hay reparaciones registradas en el sistema'
                       : `No hay reparaciones en estado ${carStatuses?.find(s => s.id === selectedStatus)?.name || 'seleccionado'}`
                   }
@@ -412,11 +412,11 @@ const AdminHistorial = () => {
             </ModalFooter>
           </Modal>
         )}
-        
+
         {/* Modificar estado modal */}
         {showModifyStatus && (
-          <ModifyStatusModal 
-            repair={showModifyStatus} 
+          <ModifyStatusModal
+            repair={showModifyStatus}
             onClose={() => setShowModifyStatus(null)}
             carStatuses={carStatuses}
             onStatusChange={loadRepairs}
@@ -437,7 +437,7 @@ const ModifyStatusModal = ({ repair, onClose, carStatuses, onStatusChange }) => 
       toast.error('Por favor seleccione un estado');
       return;
     }
-    
+
     setLoading(true);
     try {
       await carStatesService.transition(repair.car.id, selectedStatus, description);
@@ -467,7 +467,7 @@ const ModifyStatusModal = ({ repair, onClose, carStatuses, onStatusChange }) => 
               {repair.car?.licensePlate} - {repair.car?.brand} {repair.car?.model}
             </p>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Estado Actual
@@ -476,7 +476,7 @@ const ModifyStatusModal = ({ repair, onClose, carStatuses, onStatusChange }) => 
               {carStatuses?.find(s => s.id === repair.car?.statusId)?.name || 'Desconocido'}
             </Badge>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Nuevo Estado *
@@ -494,7 +494,7 @@ const ModifyStatusModal = ({ repair, onClose, carStatuses, onStatusChange }) => 
               ))}
             </select>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Descripción (opcional)
@@ -539,7 +539,6 @@ ModifyStatusModal.propTypes = {
   onStatusChange: PropTypes.func.isRequired
 };
 
-// Function to get status color (copied from main component)
 const getRepairStatusColor = (carStatusId) => {
   const colors = {
     1: 'bg-gray-100 text-gray-800',    // Entrada

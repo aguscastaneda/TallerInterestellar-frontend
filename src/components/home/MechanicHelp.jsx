@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import NavBar from '../NavBar';
 import { Card, CardHeader, CardTitle, CardContent, Badge, Button } from '../ui';
-import { 
-  HelpCircle, 
-  Wrench, 
-  Search, 
-  Play, 
-  Square, 
-  Eye, 
-  Clock, 
+import {
+  HelpCircle,
+  Wrench,
+  Search,
+  Play,
+  Square,
+  Eye,
+  Clock,
   CheckCircle,
   ArrowLeft,
   BookOpen,
@@ -44,7 +44,7 @@ const MechanicHelp = () => {
                 Manual del Mecánico
               </h2>
               <p className="text-gray-600 max-w-2xl mx-auto">
-                Esta guía te ayudará a navegar y utilizar todas las funcionalidades 
+                Esta guía te ayudará a navegar y utilizar todas las funcionalidades
                 disponibles en tu panel de mecánico para gestionar eficientemente tus trabajos.
               </p>
             </div>
@@ -116,7 +116,7 @@ const MechanicHelp = () => {
                   <p className="text-gray-600">
                     Aquí encontrarás todos los trabajos que te han sido asignados y están listos para comenzar.
                   </p>
-                  
+
                   <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                     <h4 className="font-semibold text-yellow-900 mb-2 flex items-center space-x-2">
                       <Play className="h-4 w-4" />
@@ -140,7 +140,7 @@ const MechanicHelp = () => {
                   <p className="text-gray-600">
                     Trabajos que actualmente estás realizando. Puedes finalizarlos cuando estén completos.
                   </p>
-                  
+
                   <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                     <h4 className="font-semibold text-blue-900 mb-2 flex items-center space-x-2">
                       <Square className="h-4 w-4" />
@@ -164,7 +164,7 @@ const MechanicHelp = () => {
                   <p className="text-gray-600">
                     Historial de todos los trabajos que has completado exitosamente.
                   </p>
-                  
+
                   <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                     <h4 className="font-semibold text-green-900 mb-2 flex items-center space-x-2">
                       <Eye className="h-4 w-4" />
@@ -205,7 +205,7 @@ const MechanicHelp = () => {
                   <p className="text-gray-600">
                     La función de búsqueda te permite encontrar información detallada de cualquier vehículo registrado en el sistema.
                   </p>
-                  
+
                   <div className="space-y-3">
                     <div className="flex items-start space-x-3">
                       <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-sm font-semibold mt-0.5">1</div>
@@ -214,7 +214,7 @@ const MechanicHelp = () => {
                         <p className="text-sm text-gray-600">Escribe la patente exacta del vehículo en el campo de búsqueda.</p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-start space-x-3">
                       <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-sm font-semibold mt-0.5">2</div>
                       <div>
@@ -222,7 +222,7 @@ const MechanicHelp = () => {
                         <p className="text-sm text-gray-600">Presiona el botón rojo "Buscar" para ejecutar la búsqueda.</p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-start space-x-3">
                       <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-sm font-semibold mt-0.5">3</div>
                       <div>
@@ -425,7 +425,7 @@ const MechanicHelp = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <NavBar roleBadge={true} showHistory={false} />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -437,7 +437,7 @@ const MechanicHelp = () => {
           >
             Volver al Panel
           </Button>
-          
+
           <div className="text-center">
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <HelpCircle className="h-8 w-8 text-blue-600" />
@@ -466,11 +466,10 @@ const MechanicHelp = () => {
                       <button
                         key={section.id}
                         onClick={() => setActiveSection(section.id)}
-                        className={`w-full flex items-center px-4 py-3 text-left hover:bg-gray-50 transition-colors ${
-                          activeSection === section.id
+                        className={`w-full flex items-center px-4 py-3 text-left hover:bg-gray-50 transition-colors ${activeSection === section.id
                             ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
                             : 'text-gray-700'
-                        }`}
+                          }`}
                       >
                         <Icon className="h-4 w-4 mr-3" />
                         <span className="text-sm font-medium">{section.title}</span>

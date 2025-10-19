@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// Crear instancia de axios
+
 export const api = axios.create({
   baseURL: 'http://localhost:3001/api',
   timeout: 10000,
@@ -9,14 +9,14 @@ export const api = axios.create({
   },
 });
 
-// Store navigate function for use in interceptors
+
 let navigateFunction = null;
 
 export const setNavigateFunction = (navigate) => {
   navigateFunction = navigate;
 };
 
-// Interceptor para agregar token a todas las peticiones
+
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -30,20 +30,20 @@ api.interceptors.request.use(
   }
 );
 
-// Interceptor para manejar respuestas y errores
+
 api.interceptors.response.use(
   (response) => {
     return response;
   },
   (error) => {
     if (error.response?.status === 401) {
-      // Token expirado o inválido
+
       localStorage.removeItem('token');
-      // Use React Router navigation instead of window.location to prevent full page refresh
+
       if (navigateFunction) {
         navigateFunction('/login');
       } else {
-        // Fallback to window.location if navigate function is not available
+
         window.location.href = '/login';
       }
     }
@@ -51,7 +51,7 @@ api.interceptors.response.use(
   }
 );
 
-// Servicios específicos
+
 export const authService = {
   login: (credentials) => api.post('/auth/login', credentials),
   register: (userData) => api.post('/auth/register', userData),

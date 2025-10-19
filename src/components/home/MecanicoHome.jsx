@@ -23,7 +23,6 @@ const MecanicoHome = () => {
     if (!mechanicId) return;
     try {
       const response = await requestsService.getByMechanic(mechanicId);
-      // Filter out cancelled requests
       const filteredRequests = (response.data.data || []).filter(request => request.status !== 'CANCELLED');
       setRequests(filteredRequests);
     } catch (error) {
@@ -31,16 +30,13 @@ const MecanicoHome = () => {
     }
   };
 
-  // Load data on component mount
-  useEffect(() => { 
-    load(); 
-    
-    // Set up periodic refresh every 30 seconds
+  useEffect(() => {
+    load();
+
     const interval = setInterval(() => {
       load();
     }, 30000);
-    
-    // Clean up interval on component unmount
+
     return () => clearInterval(interval);
   }, [mechanicId]);
 
@@ -101,16 +97,16 @@ const MecanicoHome = () => {
     { value: 'finalizados', label: 'Finalizados', icon: <CheckCircle className="h-4 w-4" /> },
   ];
 
-  const filteredRequests = requests.filter(r => 
-    (activeTab === 'pendientes' && (r.status === 'ASSIGNED' || r.status === 'PRESUPUESTO_ENVIADO')) || 
-    (activeTab === 'en-proceso' && r.status === 'IN_REPAIR') || 
+  const filteredRequests = requests.filter(r =>
+    (activeTab === 'pendientes' && (r.status === 'ASSIGNED' || r.status === 'PRESUPUESTO_ENVIADO')) ||
+    (activeTab === 'en-proceso' && r.status === 'IN_REPAIR') ||
     (activeTab === 'finalizados' && r.status === 'COMPLETED')
   );
 
   return (
     <div className="min-h-screen bg-gray-50">
       <NavBar roleBadge={true} showHistory={false} />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8 text-center">
@@ -138,7 +134,7 @@ const MecanicoHome = () => {
                     placeholder="Ingrese patente exacta"
                     className="flex-1 px-4 py-2 h-11 rounded-l-lg border border-gray-400 focus:outline-none focus:ring-2 focus:ring-red-600 text-black"
                   />
-                  <button 
+                  <button
                     onClick={doSearch}
                     className="px-6 h-11 bg-red-600 text-white font-medium rounded-r-lg hover:bg-red-700 transition"
                   >
@@ -150,7 +146,7 @@ const MecanicoHome = () => {
                 </p>
               </div>
             </div>
-            
+
             {searchResult && (
               <Card className="mt-6 bg-green-50 border-green-200">
                 <CardContent className="p-4">
@@ -195,11 +191,11 @@ const MecanicoHome = () => {
                   No hay trabajos {activeTab === 'pendientes' ? 'pendientes' : activeTab === 'en-proceso' ? 'en proceso' : 'finalizados'}
                 </h3>
                 <p className="text-gray-600">
-                  {activeTab === 'pendientes' 
-                    ? 'No tienes trabajos pendientes asignados' 
-                    : activeTab === 'en-proceso' 
-                    ? 'No tienes trabajos en proceso actualmente'
-                    : 'No hay trabajos finalizados recientemente'
+                  {activeTab === 'pendientes'
+                    ? 'No tienes trabajos pendientes asignados'
+                    : activeTab === 'en-proceso'
+                      ? 'No tienes trabajos en proceso actualmente'
+                      : 'No hay trabajos finalizados recientemente'
                   }
                 </p>
               </CardContent>
@@ -218,7 +214,7 @@ const MecanicoHome = () => {
                           <h3 className="text-lg font-semibold text-gray-900">
                             {item.car.licensePlate}
                           </h3>
-                          <Badge 
+                          <Badge
                             variant={getStatusVariant(item.status)}
                             size="sm"
                           >
@@ -234,7 +230,7 @@ const MecanicoHome = () => {
                         </p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center space-x-2">
                       <Button
                         variant="ghost"
@@ -244,7 +240,7 @@ const MecanicoHome = () => {
                       >
                         Ver Detalles
                       </Button>
-                      
+
                       {activeTab === 'pendientes' && (
                         <Button
                           onClick={() => setBudgetModalOpen(item)}
@@ -255,7 +251,7 @@ const MecanicoHome = () => {
                           {item.status === 'PRESUPUESTO_ENVIADO' ? 'Presupuesto Enviado' : 'Presupuestar'}
                         </Button>
                       )}
-                      
+
                       {activeTab === 'en-proceso' && (
                         <Button
                           onClick={() => setFinishModalOpen(item)}
@@ -276,15 +272,15 @@ const MecanicoHome = () => {
 
       {/* Modal de detalles */}
       {selectedRequest && (
-        <RequestDetailModal 
-          request={selectedRequest} 
-          onClose={() => setSelectedRequest(null)} 
+        <RequestDetailModal
+          request={selectedRequest}
+          onClose={() => setSelectedRequest(null)}
         />
       )}
 
       {/* Modal de finalización */}
       {finishModalOpen && (
-        <FinalizeModal 
+        <FinalizeModal
           request={finishModalOpen}
           onClose={() => setFinishModalOpen(null)}
           onSubmit={(payload) => {
@@ -293,10 +289,10 @@ const MecanicoHome = () => {
           }}
         />
       )}
-      
+
       {/* Modal de presupuesto */}
       {budgetModalOpen && (
-        <BudgetModal 
+        <BudgetModal
           request={budgetModalOpen}
           onClose={() => setBudgetModalOpen(null)}
           onSubmit={(payload) => {
@@ -311,7 +307,7 @@ const MecanicoHome = () => {
 
 const RequestDetailModal = ({ request, onClose }) => {
   if (!request) return null;
-  
+
   return (
     <Modal isOpen={!!request} onClose={onClose} size="lg">
       <ModalHeader onClose={onClose}>
@@ -325,7 +321,7 @@ const RequestDetailModal = ({ request, onClose }) => {
           </div>
         </div>
       </ModalHeader>
-      
+
       <ModalContent>
         <div className="space-y-6">
           {/* Información del vehículo */}
@@ -344,33 +340,33 @@ const RequestDetailModal = ({ request, onClose }) => {
                 </p>
               </div>
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-gray-500">Estado</label>
                 <div className="flex items-center space-x-2 mt-1">
-                  <Badge 
+                  <Badge
                     variant={
-                      request.status === 'ASSIGNED' ? 'warning' : 
-                      request.status === 'PRESUPUESTO_ENVIADO' ? 'info' : 
-                      request.status === 'IN_REPAIR' ? 'info' : 
-                      'success'
+                      request.status === 'ASSIGNED' ? 'warning' :
+                        request.status === 'PRESUPUESTO_ENVIADO' ? 'info' :
+                          request.status === 'IN_REPAIR' ? 'info' :
+                            'success'
                     }
                     size="md"
                   >
-                    {request.status === 'ASSIGNED' ? <Clock className="h-4 w-4" /> : 
-                     request.status === 'PRESUPUESTO_ENVIADO' ? <DollarSign className="h-4 w-4" /> : 
-                     request.status === 'IN_REPAIR' ? <Wrench className="h-4 w-4" /> : 
-                     <CheckCircle className="h-4 w-4" />}
+                    {request.status === 'ASSIGNED' ? <Clock className="h-4 w-4" /> :
+                      request.status === 'PRESUPUESTO_ENVIADO' ? <DollarSign className="h-4 w-4" /> :
+                        request.status === 'IN_REPAIR' ? <Wrench className="h-4 w-4" /> :
+                          <CheckCircle className="h-4 w-4" />}
                     <span className="ml-1">
-                      {request.status === 'ASSIGNED' ? 'Pendiente' : 
-                       request.status === 'PRESUPUESTO_ENVIADO' ? 'Presupuesto Enviado' : 
-                       request.status === 'IN_REPAIR' ? 'En Reparación' : 'Finalizado'}
+                      {request.status === 'ASSIGNED' ? 'Pendiente' :
+                        request.status === 'PRESUPUESTO_ENVIADO' ? 'Presupuesto Enviado' :
+                          request.status === 'IN_REPAIR' ? 'En Reparación' : 'Finalizado'}
                     </span>
                   </Badge>
                 </div>
               </div>
-              
+
               {request.cost && (
                 <div>
                   <label className="text-sm font-medium text-gray-500">Costo</label>
@@ -505,7 +501,7 @@ const RequestDetailModal = ({ request, onClose }) => {
           )}
         </div>
       </ModalContent>
-      
+
       <ModalFooter>
         <Button variant="secondary" onClick={onClose}>
           Cerrar
@@ -576,7 +572,7 @@ const FinalizeModal = ({ request, onClose, onSubmit }) => {
           </div>
         </div>
       </ModalHeader>
-      
+
       <ModalContent>
         <div className="space-y-4">
           <div>
@@ -591,7 +587,7 @@ const FinalizeModal = ({ request, onClose, onSubmit }) => {
               rows={4}
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Costo Final *
@@ -607,7 +603,7 @@ const FinalizeModal = ({ request, onClose, onSubmit }) => {
           </div>
         </div>
       </ModalContent>
-      
+
       <ModalFooter>
         <Button variant="secondary" onClick={onClose}>
           Cancelar
@@ -659,7 +655,7 @@ const BudgetModal = ({ request, onClose, onSubmit }) => {
           </div>
         </div>
       </ModalHeader>
-      
+
       <ModalContent>
         <div className="space-y-4">
           <div>
@@ -674,7 +670,7 @@ const BudgetModal = ({ request, onClose, onSubmit }) => {
               rows={4}
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Costo Estimado *
@@ -691,7 +687,7 @@ const BudgetModal = ({ request, onClose, onSubmit }) => {
           </div>
         </div>
       </ModalContent>
-      
+
       <ModalFooter>
         <Button variant="secondary" onClick={onClose}>
           Cancelar

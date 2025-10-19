@@ -46,13 +46,13 @@ const ForgotPassword = () => {
         toast.success('Email enviado correctamente');
         setIsLoading(false);
       } else {
-        
+
         setError(result.message || 'Error al enviar el email');
         setIsLoading(false);
       }
     } catch (error) {
       console.error('Error:', error);
-     
+
       setError('Error de conexión');
       setIsLoading(false);
     }
@@ -78,7 +78,7 @@ const ForgotPassword = () => {
               {emailSent ? '¡Email Enviado!' : '¿Olvidaste tu contraseña?'}
             </CardTitle>
             <CardDescription>
-              {emailSent 
+              {emailSent
                 ? `Hemos enviado un enlace de recuperación a ${getValues('email')}`
                 : 'Ingresa tu email para recibir un enlace de recuperación'
               }
@@ -153,7 +153,7 @@ const ForgotPassword = () => {
                 <span>Volver al login</span>
               </button>
             </div>
-            
+
             {emailSent && (
               <Button
                 onClick={() => {

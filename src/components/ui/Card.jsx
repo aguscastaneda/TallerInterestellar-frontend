@@ -9,14 +9,14 @@ const Card = forwardRef(({
   ...props
 }, ref) => {
   const baseClasses = 'card';
-  
+
   const variantClasses = {
     default: '',
     elevated: 'shadow-medium',
     flat: 'shadow-none border-0',
     outlined: 'shadow-none border-2',
   };
-  
+
   const classes = clsx(
     baseClasses,
     variantClasses[variant],
@@ -25,7 +25,7 @@ const Card = forwardRef(({
     },
     className
   );
-  
+
   return (
     <div
       ref={ref}

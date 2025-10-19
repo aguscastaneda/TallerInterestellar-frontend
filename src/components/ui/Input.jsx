@@ -10,7 +10,7 @@ const Input = forwardRef(({
   ...props
 }, ref) => {
   const baseClasses = error ? 'input-error' : 'input-base';
-  
+
   const classes = clsx(
     baseClasses,
     {
@@ -19,7 +19,7 @@ const Input = forwardRef(({
     },
     className
   );
-  
+
   return (
     <div className="relative">
       {leftIcon && (

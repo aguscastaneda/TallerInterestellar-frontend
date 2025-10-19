@@ -11,7 +11,7 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(""); // Estado para manejar errores
+  const [error, setError] = useState("");
   const { registerUser } = useAuth();
   const { config } = useConfig();
   const navigate = useNavigate();
@@ -23,7 +23,7 @@ const Register = () => {
     formState: { errors },
   } = useForm();
 
-  // Clear error after 3 seconds if it exists
+
   useEffect(() => {
     if (error) {
       const timer = setTimeout(() => {
@@ -42,7 +42,7 @@ const Register = () => {
     }
 
     setIsLoading(true);
-    setError(""); // Limpiar errores previos
+    setError("");
     try {
       const result = await registerUser({
         name: data.name,
@@ -56,24 +56,24 @@ const Register = () => {
 
       if (result.success) {
         toast.success('¡Usuario registrado exitosamente!');
-        // Add a small delay before navigation to allow user to see success message
+
         setTimeout(() => {
           navigate('/home');
         }, 1000);
       } else {
-        // For errors, we set the error and stop loading immediately so user can see the error
+
         setError(result.message || 'Error en el registro');
         setIsLoading(false);
       }
     } catch (error) {
       console.error('Error en registro:', error);
-      // For exceptions, we set the error and stop loading immediately so user can see the error
+
       setError('Error en el servidor');
       setIsLoading(false);
     }
   };
 
-  // Prevent form submission if Enter key is pressed without proper handling
+
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();

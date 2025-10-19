@@ -7,7 +7,6 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Colores personalizados basados en design tokens
         black: {
           50: '#f8f8f8',
           100: '#f0f0f0',
@@ -81,7 +80,6 @@ export default {
           800: '#2e7d32',
           900: '#1b5e20',
         },
-        // Colores semánticos
         success: '#4CAF50',
         warning: '#FFC107',
         error: '#D32F2F',

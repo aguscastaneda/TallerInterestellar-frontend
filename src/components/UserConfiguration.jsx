@@ -5,15 +5,15 @@ import NavBar from './NavBar';
 import { useAuth } from '../contexts/AuthContext';
 import { usersService } from '../services/api';
 import { Button, Card, CardHeader, CardTitle, CardContent, CardFooter, Input, Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter } from './ui';
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  FileText, 
-  Save, 
-  ArrowLeft, 
-  Lock, 
-  Eye, 
+import {
+  User,
+  Mail,
+  Phone,
+  FileText,
+  Save,
+  ArrowLeft,
+  Lock,
+  Eye,
   EyeOff,
   Settings,
   KeyRound
@@ -32,7 +32,7 @@ const UserConfiguration = () => {
     confirm: false
   });
 
-  // Clear error after 3 seconds if it exists
+
   useEffect(() => {
     if (error) {
       const timer = setTimeout(() => {
@@ -42,7 +42,7 @@ const UserConfiguration = () => {
     }
   }, [error]);
 
-  // Clear password error after 3 seconds if it exists
+
   useEffect(() => {
     if (passwordError) {
       const timer = setTimeout(() => {
@@ -52,7 +52,7 @@ const UserConfiguration = () => {
     }
   }, [passwordError]);
 
-  // Formulario de datos personales
+
   const [profileForm, setProfileForm] = useState({
     name: '',
     lastName: '',
@@ -61,14 +61,14 @@ const UserConfiguration = () => {
     cuil: ''
   });
 
-  // Formulario de cambio de contraseña
+
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
 
-  // Cargar datos del usuario al montar el componente
+
   useEffect(() => {
     if (user) {
       setProfileForm({
@@ -87,8 +87,8 @@ const UserConfiguration = () => {
     setError("");
     try {
       setLoading(true);
-      
-      // Validar campos requeridos
+
+
       if (!profileForm.name || !profileForm.lastName || !profileForm.email) {
         setError('Nombre, apellido y email son campos obligatorios');
         setLoading(false);
@@ -96,20 +96,20 @@ const UserConfiguration = () => {
       }
 
       const response = await usersService.update(user.id, profileForm);
-      
+
       if (response.data.success) {
-        // Actualizar datos del usuario en el contexto
+
         updateUser(response.data.data);
         toast.success('Perfil actualizado exitosamente');
         setLoading(false);
       } else {
-     
+
         setError(response.data.message || 'Error al actualizar el perfil');
         setLoading(false);
       }
     } catch (error) {
       console.error('Error actualizando perfil:', error);
- 
+
       setError(error.response?.data?.message || 'Error al actualizar el perfil');
       setLoading(false);
     }
@@ -122,7 +122,7 @@ const UserConfiguration = () => {
     try {
       setLoading(true);
 
-      // Validaciones
+
       if (!passwordForm.currentPassword) {
         setPasswordError('Debe ingresar la contraseña actual');
         setLoading(false);
@@ -167,13 +167,13 @@ const UserConfiguration = () => {
         });
         setLoading(false);
       } else {
-    
+
         setPasswordError(response.data.message || 'Error al cambiar la contraseña');
         setLoading(false);
       }
     } catch (error) {
       console.error('Error cambiando contraseña:', error);
-    
+
       setPasswordError(error.response?.data?.message || 'Error al cambiar la contraseña');
       setLoading(false);
     }
@@ -193,7 +193,7 @@ const UserConfiguration = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <NavBar roleBadge={true} showHistory={false} />
-      
+
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -241,7 +241,7 @@ const UserConfiguration = () => {
                   </label>
                   <Input
                     value={profileForm.name}
-                    onChange={e => setProfileForm({...profileForm, name: e.target.value})}
+                    onChange={e => setProfileForm({ ...profileForm, name: e.target.value })}
                     placeholder="Ingrese su nombre"
                     leftIcon={<User className="h-4 w-4" />}
                   />
@@ -252,45 +252,45 @@ const UserConfiguration = () => {
                   </label>
                   <Input
                     value={profileForm.lastName}
-                    onChange={e => setProfileForm({...profileForm, lastName: e.target.value})}
+                    onChange={e => setProfileForm({ ...profileForm, lastName: e.target.value })}
                     placeholder="Ingrese su apellido"
                     leftIcon={<User className="h-4 w-4" />}
                   />
                 </div>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Email *
                 </label>
                 <Input
                   value={profileForm.email}
-                  onChange={e => setProfileForm({...profileForm, email: e.target.value})}
+                  onChange={e => setProfileForm({ ...profileForm, email: e.target.value })}
                   placeholder="Ingrese su email"
                   type="email"
                   leftIcon={<Mail className="h-4 w-4" />}
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Teléfono
                 </label>
                 <Input
                   value={profileForm.phone}
-                  onChange={e => setProfileForm({...profileForm, phone: e.target.value})}
+                  onChange={e => setProfileForm({ ...profileForm, phone: e.target.value })}
                   placeholder="Ingrese su teléfono"
                   leftIcon={<Phone className="h-4 w-4" />}
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   CUIL
                 </label>
                 <Input
                   value={profileForm.cuil}
-                  onChange={e => setProfileForm({...profileForm, cuil: e.target.value})}
+                  onChange={e => setProfileForm({ ...profileForm, cuil: e.target.value })}
                   placeholder="Ingrese su CUIL"
                   leftIcon={<FileText className="h-4 w-4" />}
                 />
@@ -332,7 +332,7 @@ const UserConfiguration = () => {
                     Cambiar Contraseña
                   </Button>
                 </div>
-                
+
                 <div className="bg-blue-50 rounded-lg p-4">
                   <h4 className="font-medium text-blue-900 mb-2">Información de Cuenta</h4>
                   <div className="space-y-2 text-sm">
@@ -360,7 +360,7 @@ const UserConfiguration = () => {
         </div>
       </div>
 
-      {/* Modal de cambio de contraseña */}
+
       <Modal isOpen={showPasswordModal} onClose={() => setShowPasswordModal(false)} size="md">
         <ModalHeader onClose={() => setShowPasswordModal(false)}>
           <ModalTitle className="flex items-center space-x-2">
@@ -368,7 +368,7 @@ const UserConfiguration = () => {
             <span>Cambiar Contraseña</span>
           </ModalTitle>
         </ModalHeader>
-        
+
         <ModalContent>
           <div className="space-y-4">
             {passwordError && (
@@ -385,7 +385,7 @@ const UserConfiguration = () => {
                 <Input
                   type={showPasswords.current ? "text" : "password"}
                   value={passwordForm.currentPassword}
-                  onChange={e => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
+                  onChange={e => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
                   placeholder="Ingrese su contraseña actual"
                   leftIcon={<Lock className="h-4 w-4" />}
                 />
@@ -412,7 +412,7 @@ const UserConfiguration = () => {
                 <Input
                   type={showPasswords.new ? "text" : "password"}
                   value={passwordForm.newPassword}
-                  onChange={e => setPasswordForm({...passwordForm, newPassword: e.target.value})}
+                  onChange={e => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
                   placeholder="Ingrese la nueva contraseña"
                   leftIcon={<Lock className="h-4 w-4" />}
                 />
@@ -442,7 +442,7 @@ const UserConfiguration = () => {
                 <Input
                   type={showPasswords.confirm ? "text" : "password"}
                   value={passwordForm.confirmPassword}
-                  onChange={e => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
+                  onChange={e => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
                   placeholder="Repita la nueva contraseña"
                   leftIcon={<Lock className="h-4 w-4" />}
                 />
@@ -496,7 +496,7 @@ const UserConfiguration = () => {
             </div>
           </div>
         </ModalContent>
-        
+
         <ModalFooter>
           <div className="flex space-x-3">
             <Button

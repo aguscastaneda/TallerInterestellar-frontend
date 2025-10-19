@@ -40,40 +40,40 @@ export const ConfigProvider = ({ children }) => {
     loadConfig();
   }, []);
 
-  // Función para obtener un rol por ID
+
   const getRoleById = (roleId) => {
     return config.roles.find(role => role.id === roleId);
   };
 
-  // Función para obtener un estado de auto por ID
+
   const getCarStatusById = (statusId) => {
     return config.carStatuses.find(status => status.id === statusId);
   };
 
-  // Función para obtener un estado de auto por nombre
+
   const getCarStatusByName = (statusName) => {
     return config.carStatuses.find(status => status.name === statusName);
   };
 
-  // Función para obtener colores de estado
+
   const getStatusColor = (statusId) => {
     const status = getCarStatusById(statusId);
     return status?.color || 'bg-gray-100 text-gray-800';
   };
 
-  // Función para obtener colores de tab
+
   const getStatusTabColor = (statusId) => {
     const status = getCarStatusById(statusId);
     return status?.tabColor || 'bg-gray-500 hover:bg-gray-600';
   };
 
-  // Función para traducir estado de solicitud
+
   const translateServiceRequestStatus = (status) => {
     const statusConfig = config.serviceRequestStatuses.find(s => s.value === status);
     return statusConfig?.label || status;
   };
 
-  // Función para obtener constantes
+
   const getConstants = () => {
     return config.constants;
   };

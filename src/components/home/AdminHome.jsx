@@ -8,7 +8,6 @@ import { Button, Card, CardContent, Badge, Input, Modal, ModalHeader, ModalTitle
 import { User, Users, Wrench, Shield, Eye, Edit, Trash2, Plus, Mail, Phone, Calendar, CheckCircle, XCircle, Car } from 'lucide-react';
 import { validateUserCreationForm } from '../../utils/validation';
 
-// Role constants
 const ROLE_IDS = {
   CLIENT: 1,
   MECHANIC: 2,
@@ -27,7 +26,7 @@ const ROLE_NAMES = {
 
 const AdminHome = () => {
   useAuth();
-  useConfig(); // Just call the hook without destructuring since we don't use the returned values
+  useConfig();
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState(ROLE_NAMES.CLIENT);
   const [searchResult, setSearchResult] = useState(null);
@@ -54,7 +53,6 @@ const AdminHome = () => {
     password: ''
   });
 
-  // Get role ID based on active tab
   const getRoleIdForActiveTab = () => {
     const roleMap = {
       [ROLE_NAMES.CLIENT]: ROLE_IDS.CLIENT,
@@ -63,15 +61,14 @@ const AdminHome = () => {
       [ROLE_NAMES.ADMIN]: ROLE_IDS.ADMIN,
       [ROLE_NAMES.RECEPTIONIST]: ROLE_IDS.RECEPTIONIST
     };
-    
+
     return roleMap[activeTab] || ROLE_IDS.CLIENT;
   };
 
-  // Load all users
   const loadUsers = async () => {
     try {
       const res = await usersService.getAll();
-      
+
       if (res.data?.success && res.data?.data) {
         setUsers(res.data.data);
       } else {
@@ -84,7 +81,6 @@ const AdminHome = () => {
     }
   };
 
-  // Load bosses for mechanic assignment
   const loadBosses = async () => {
     try {
       const res = await usersService.getBosses();
@@ -100,7 +96,6 @@ const AdminHome = () => {
     }
   };
 
-  // Load data on component mount
   useEffect(() => {
     loadUsers();
     loadBosses();
@@ -117,30 +112,27 @@ const AdminHome = () => {
     }
   };
 
-  // Handle user creation
   const handleCreateUser = async () => {
     try {
-      // Validate form data
       const roleId = getRoleIdForActiveTab();
       const validation = validateUserCreationForm(createForm, roleId);
-      
+
       if (!validation.isValid) {
         validation.errors.forEach(error => toast.error(error));
         return;
       }
-      
+
       const formData = {
         ...createForm,
         roleId
       };
-      
-      // Process boss assignment for mechanics
+
       if (roleId === ROLE_IDS.MECHANIC) {
         formData.bossId = parseInt(formData.bossId);
       } else {
         delete formData.bossId;
       }
-      
+
       await usersService.create(formData);
       toast.success('Usuario creado exitosamente');
       setShowCreateForm(false);
@@ -162,9 +154,9 @@ const AdminHome = () => {
   const handleDeleteUser = async (userId) => {
     const user = users.find(u => u.id === userId);
     const action = user?.active ? 'desactivar' : 'activar';
-    
+
     if (!confirm(`¿Estás seguro de ${action} este usuario?`)) return;
-    
+
     try {
       await usersService.delete(userId);
       toast.success(`Usuario ${action}do correctamente`);
@@ -181,7 +173,7 @@ const AdminHome = () => {
       lastName: userItem.lastName,
       cuil: userItem.cuil || '',
       email: userItem.email,
-      password: '' 
+      password: ''
     });
     setShowEditForm(true);
   };
@@ -195,7 +187,6 @@ const AdminHome = () => {
         email: editForm.email
       };
 
-      // Solo incluir password si se proporciona una nueva
       if (editForm.password.trim()) {
         updateData.password = editForm.password;
       }
@@ -212,10 +203,8 @@ const AdminHome = () => {
 
   const getUsersByRole = (roleId) => {
     console.log('Filtrando usuarios por roleId:', roleId, 'Total usuarios:', users.length);
-    
+
     const filtered = users.filter(u => {
-      // El backend devuelve role: { id: 1, name: "Cliente" }
-      // Mostrar todos los usuarios (activos e inactivos) en AdminHome
       return u.role?.id === roleId;
     });
     console.log('Usuarios filtrados para roleId', roleId, ':', filtered.length, 'usuarios');
@@ -229,9 +218,8 @@ const AdminHome = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <NavBar roleBadge={true} showHistory={false} />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Panel de Administración
@@ -241,7 +229,6 @@ const AdminHome = () => {
           </p>
         </div>
 
-        {/* Búsqueda de autos */}
         <Card className="mb-8">
           <CardContent className="p-8">
             <div className="flex items-center justify-center">
@@ -257,7 +244,7 @@ const AdminHome = () => {
                     placeholder="Ingresa la patente del vehículo"
                     className="flex-1 px-4 py-2 h-11 rounded-l-lg border border-gray-400 focus:outline-none focus:ring-2 focus:ring-red-600 text-black"
                   />
-                  <button 
+                  <button
                     onClick={doSearch}
                     className="px-6 h-11 bg-red-600 text-white font-medium rounded-r-lg hover:bg-red-700 transition"
                   >
@@ -266,7 +253,7 @@ const AdminHome = () => {
                 </div>
               </div>
             </div>
-            
+
             {searchResult && (
               <Card className="mt-6 bg-green-50 border-green-200">
                 <CardContent className="p-4">
@@ -291,7 +278,6 @@ const AdminHome = () => {
           </CardContent>
         </Card>
 
-        {/* Navegación por pestañas */}
         <div className="mb-8">
           <SegmentedControl
             options={[
@@ -320,7 +306,6 @@ const AdminHome = () => {
           />
         </div>
 
-        {/* Botón crear usuario */}
         <div className="flex justify-end mb-6">
           <Button
             onClick={() => setShowCreateForm(true)}
@@ -343,26 +328,26 @@ const AdminHome = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
                   value={createForm.name}
-                  onChange={(e) => setCreateForm({...createForm, name: e.target.value})}
+                  onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
                   placeholder="Nombre"
                   label="Nombre"
                 />
                 <Input
                   value={createForm.lastName}
-                  onChange={(e) => setCreateForm({...createForm, lastName: e.target.value})}
+                  onChange={(e) => setCreateForm({ ...createForm, lastName: e.target.value })}
                   placeholder="Apellido"
                   label="Apellido"
                 />
                 <Input
                   value={createForm.cuil}
-                  onChange={(e) => setCreateForm({...createForm, cuil: e.target.value})}
+                  onChange={(e) => setCreateForm({ ...createForm, cuil: e.target.value })}
                   placeholder="CUIL"
                   label="CUIL"
                   leftIcon={<Shield className="h-4 w-4" />}
                 />
                 <Input
                   value={createForm.email}
-                  onChange={(e) => setCreateForm({...createForm, email: e.target.value})}
+                  onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
                   placeholder="Email"
                   type="email"
                   label="Email"
@@ -370,7 +355,7 @@ const AdminHome = () => {
                 />
                 <Input
                   value={createForm.password}
-                  onChange={(e) => setCreateForm({...createForm, password: e.target.value})}
+                  onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
                   placeholder="Contraseña"
                   type="password"
                   label="Contraseña"
@@ -383,7 +368,7 @@ const AdminHome = () => {
                     <div className="relative">
                       <select
                         value={createForm.bossId}
-                        onChange={(e) => setCreateForm({...createForm, bossId: e.target.value})}
+                        onChange={(e) => setCreateForm({ ...createForm, bossId: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none"
                       >
                         <option value="">Selecciona un jefe de mecánicos</option>
@@ -395,7 +380,7 @@ const AdminHome = () => {
                       </select>
                       <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                         <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                          <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                          <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
                         </svg>
                       </div>
                     </div>
@@ -433,26 +418,26 @@ const AdminHome = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
                   value={editForm.name}
-                  onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
                   placeholder="Nombre"
                   label="Nombre"
                 />
                 <Input
                   value={editForm.lastName}
-                  onChange={(e) => setEditForm({...editForm, lastName: e.target.value})}
+                  onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
                   placeholder="Apellido"
                   label="Apellido"
                 />
                 <Input
                   value={editForm.cuil}
-                  onChange={(e) => setEditForm({...editForm, cuil: e.target.value})}
+                  onChange={(e) => setEditForm({ ...editForm, cuil: e.target.value })}
                   placeholder="CUIL"
                   label="CUIL"
                   leftIcon={<Shield className="h-4 w-4" />}
                 />
                 <Input
                   value={editForm.email}
-                  onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
                   placeholder="Email"
                   type="email"
                   label="Email"
@@ -460,7 +445,7 @@ const AdminHome = () => {
                 />
                 <Input
                   value={editForm.password}
-                  onChange={(e) => setEditForm({...editForm, password: e.target.value})}
+                  onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
                   placeholder="Nueva contraseña (opcional)"
                   type="password"
                   label="Nueva contraseña"
@@ -490,8 +475,8 @@ const AdminHome = () => {
         {/* Lista de usuarios */}
         <div className="space-y-4">
           {getUsersByRole(
-            activeTab === 'clientes' ? 1 : 
-            activeTab === 'mecanicos' ? 2 : 3
+            activeTab === 'clientes' ? 1 :
+              activeTab === 'mecanicos' ? 2 : 3
           ).length === 0 ? (
             <Card className="text-center py-12">
               <CardContent>
@@ -506,20 +491,18 @@ const AdminHome = () => {
             </Card>
           ) : (
             getUsersByRole(
-              activeTab === 'clientes' ? 1 : 
-              activeTab === 'mecanicos' ? 2 : 3
+              activeTab === 'clientes' ? 1 :
+                activeTab === 'mecanicos' ? 2 : 3
             ).map((userItem) => (
               <Card key={userItem.id} className="card-hover">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                       <div className="flex-shrink-0">
-                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                          userItem.active ? 'bg-green-100' : 'bg-red-100'
-                        }`}>
-                          <User className={`h-6 w-6 ${
-                            userItem.active ? 'text-green-600' : 'text-red-600'
-                          }`} />
+                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${userItem.active ? 'bg-green-100' : 'bg-red-100'
+                          }`}>
+                          <User className={`h-6 w-6 ${userItem.active ? 'text-green-600' : 'text-red-600'
+                            }`} />
                         </div>
                       </div>
                       <div className="flex-1">
@@ -585,12 +568,10 @@ const AdminHome = () => {
             <ModalContent>
               <div className="space-y-6">
                 <div className="flex items-center space-x-4">
-                  <div className={`w-16 h-16 rounded-lg flex items-center justify-center ${
-                    showUserDetails.active ? 'bg-green-100' : 'bg-red-100'
-                  }`}>
-                    <User className={`h-8 w-8 ${
-                      showUserDetails.active ? 'text-green-600' : 'text-red-600'
-                    }`} />
+                  <div className={`w-16 h-16 rounded-lg flex items-center justify-center ${showUserDetails.active ? 'bg-green-100' : 'bg-red-100'
+                    }`}>
+                    <User className={`h-8 w-8 ${showUserDetails.active ? 'text-green-600' : 'text-red-600'
+                      }`} />
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold text-gray-900">
@@ -609,7 +590,7 @@ const AdminHome = () => {
                         <p className="text-gray-900">{showUserDetails.email}</p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center space-x-3">
                       <Shield className="h-5 w-5 text-gray-400" />
                       <div>
@@ -627,7 +608,7 @@ const AdminHome = () => {
                         <p className="text-gray-900">{showUserDetails.phone || 'No especificado'}</p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center space-x-3">
                       <Calendar className="h-5 w-5 text-gray-400" />
                       <div>

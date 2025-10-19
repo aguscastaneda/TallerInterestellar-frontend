@@ -43,7 +43,7 @@ const ResetPassword = () => {
 
   const onSubmit = async (data) => {
     setError("");
-    
+
     if (data.password !== data.confirmPassword) {
       setError('Las contraseñas no coinciden');
       return;
@@ -77,7 +77,7 @@ const ResetPassword = () => {
       }
     } catch (error) {
       console.error('Error:', error);
-   
+
       setError('Error de conexión');
       setIsLoading(false);
     }
@@ -112,7 +112,7 @@ const ResetPassword = () => {
               {passwordReset ? '¡Contraseña Restablecida!' : 'Nueva Contraseña'}
             </CardTitle>
             <CardDescription>
-              {passwordReset 
+              {passwordReset
                 ? 'Tu contraseña ha sido actualizada exitosamente'
                 : 'Ingresa tu nueva contraseña'
               }

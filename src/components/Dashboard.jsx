@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { carsService, repairsService, paymentsService } from '../services/api';
-import { 
-  Car, 
-  Wrench, 
-  DollarSign, 
-  Users, 
-  LogOut, 
-  Menu, 
+import {
+  Car,
+  Wrench,
+  DollarSign,
+  Users,
+  LogOut,
+  Menu,
   X,
   Plus,
   Eye,
@@ -37,7 +37,7 @@ const Dashboard = () => {
         repairsService.getAll(),
         paymentsService.getAll()
       ]);
-      
+
       setCars(carsRes.data.data || []);
       setRepairs(repairsRes.data.data || []);
       setPayments(paymentsRes.data.data || []);
@@ -149,7 +149,7 @@ const Dashboard = () => {
                 Estado
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Prioridad
+                Año
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Acciones
@@ -174,7 +174,7 @@ const Dashboard = () => {
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-sm text-gray-900">{car.priority}</span>
+                  <span className="text-sm text-gray-900">{car.year}</span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex space-x-2">
@@ -424,11 +424,10 @@ const Dashboard = () => {
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium ${
-                    activeTab === item.id
+                  className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium ${activeTab === item.id
                       ? 'bg-indigo-100 text-indigo-900'
                       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
+                    }`}
                 >
                   <span className="mr-3">{item.icon}</span>
                   {item.name}
@@ -457,11 +456,10 @@ const Dashboard = () => {
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium ${
-                    activeTab === item.id
+                  className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium ${activeTab === item.id
                       ? 'bg-indigo-100 text-indigo-900'
                       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
+                    }`}
                 >
                   <span className="mr-3">{item.icon}</span>
                   {item.name}

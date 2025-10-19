@@ -1,17 +1,17 @@
 import { useState } from 'react';
 import NavBar from '../NavBar';
 import { Card, CardHeader, CardTitle, CardContent, Badge, Button } from '../ui';
-import { 
-  HelpCircle, 
-  Users, 
-  Wrench, 
-  FileText, 
-  Search, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  Clock, 
+import {
+  HelpCircle,
+  Users,
+  Wrench,
+  FileText,
+  Search,
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
+  Clock,
   CheckCircle,
   ArrowLeft,
   BookOpen,
@@ -45,7 +45,7 @@ const JefeHelp = () => {
                 Manual del Jefe de Mecánico
               </h2>
               <p className="text-gray-600 max-w-2xl mx-auto">
-                Este manual te guiará a través de todas las funcionalidades disponibles 
+                Este manual te guiará a través de todas las funcionalidades disponibles
                 en tu panel de control para gestionar eficientemente tu taller.
               </p>
             </div>
@@ -153,10 +153,10 @@ const JefeHelp = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-gray-600">
-                    En esta sección verás todas las solicitudes que los clientes han enviado 
+                    En esta sección verás todas las solicitudes que los clientes han enviado
                     y que están esperando ser asignadas a un mecánico.
                   </p>
-                  
+
                   <div className="bg-blue-50 p-4 rounded-lg">
                     <h4 className="font-semibold text-blue-900 mb-2">Información que verás:</h4>
                     <ul className="space-y-1 text-sm text-blue-800">
@@ -208,7 +208,7 @@ const JefeHelp = () => {
                   <p className="text-gray-600">
                     Usa los filtros para ver solicitudes por estado y mecánico asignado.
                   </p>
-                  
+
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="bg-yellow-50 p-4 rounded-lg">
                       <h4 className="font-semibold text-yellow-900 mb-2 flex items-center space-x-2">
@@ -302,7 +302,7 @@ const JefeHelp = () => {
                   <p className="text-gray-600">
                     Para agregar un nuevo mecánico a tu equipo:
                   </p>
-                  
+
                   <ol className="space-y-2 text-sm text-gray-600">
                     <li>1. Haz clic en el botón <Badge variant="primary">Crear Mecánico</Badge></li>
                     <li>2. Completa todos los campos obligatorios</li>
@@ -334,7 +334,7 @@ const JefeHelp = () => {
                   <p className="text-gray-600">
                     Para cada mecánico puedes realizar las siguientes acciones:
                   </p>
-                  
+
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="bg-green-50 p-4 rounded-lg">
                       <h4 className="font-semibold text-green-900 mb-2 flex items-center space-x-2">
@@ -405,10 +405,10 @@ const JefeHelp = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-gray-600">
-                    La búsqueda por patente te permite acceder rápidamente a información 
+                    La búsqueda por patente te permite acceder rápidamente a información
                     de cualquier vehículo registrado en el sistema.
                   </p>
-                  
+
                   <div className="bg-blue-50 p-4 rounded-lg">
                     <h4 className="font-semibold text-blue-900 mb-2">Pasos para buscar:</h4>
                     <ol className="space-y-1 text-sm text-blue-800">
@@ -523,7 +523,7 @@ const JefeHelp = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-600">
-                    Si continúas teniendo problemas, contacta al administrador del sistema 
+                    Si continúas teniendo problemas, contacta al administrador del sistema
                     o al equipo de soporte técnico para obtener ayuda adicional.
                   </p>
                 </CardContent>
@@ -540,7 +540,7 @@ const JefeHelp = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <NavBar roleBadge={true} showHistory={false} />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -579,11 +579,10 @@ const JefeHelp = () => {
                       <button
                         key={section.id}
                         onClick={() => setActiveSection(section.id)}
-                        className={`w-full flex items-center space-x-3 px-4 py-3 text-left transition-colors duration-150 ${
-                          activeSection === section.id
+                        className={`w-full flex items-center space-x-3 px-4 py-3 text-left transition-colors duration-150 ${activeSection === section.id
                             ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
                             : 'text-gray-600 hover:bg-gray-50'
-                        }`}
+                          }`}
                       >
                         <Icon className="h-4 w-4" />
                         <span className="text-sm font-medium">{section.title}</span>

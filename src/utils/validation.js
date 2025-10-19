@@ -22,12 +22,12 @@ export const validateEmail = (email) => {
   if (!email || !email.trim()) {
     return 'El email es obligatorio';
   }
-  
+
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     return 'El email no tiene un formato válido';
   }
-  
+
   return null;
 };
 
@@ -41,11 +41,11 @@ export const validatePassword = (password, minLength = 6) => {
   if (!password || !password.trim()) {
     return 'La contraseña es obligatoria';
   }
-  
+
   if (password.length < minLength) {
     return `La contraseña debe tener al menos ${minLength} caracteres`;
   }
-  
+
   return null;
 };
 
@@ -70,26 +70,26 @@ export const validateSelection = (value, fieldName) => {
  */
 export const validateUserCreationForm = (formData, roleId) => {
   const errors = [];
-  
+
   // Common validations for all user types
   const nameError = validateRequired(formData.name, 'El nombre');
   if (nameError) errors.push(nameError);
-  
+
   const lastNameError = validateRequired(formData.lastName, 'El apellido');
   if (lastNameError) errors.push(lastNameError);
-  
+
   const emailError = validateEmail(formData.email);
   if (emailError) errors.push(emailError);
-  
+
   const passwordError = validatePassword(formData.password);
   if (passwordError) errors.push(passwordError);
-  
+
   // Role-specific validations
   if (roleId === 2) { // Mechanic
     const bossError = validateSelection(formData.bossId, 'un jefe de mecánicos');
     if (bossError) errors.push(bossError);
   }
-  
+
   return {
     isValid: errors.length === 0,
     errors
@@ -104,25 +104,25 @@ export const validateUserCreationForm = (formData, roleId) => {
  */
 export const validateMechanicCreationForm = (formData, bossId) => {
   const errors = [];
-  
+
   // Validate required fields
   const nameError = validateRequired(formData.name, 'El nombre');
   if (nameError) errors.push(nameError);
-  
+
   const lastNameError = validateRequired(formData.lastName, 'El apellido');
   if (lastNameError) errors.push(lastNameError);
-  
+
   const emailError = validateEmail(formData.email);
   if (emailError) errors.push(emailError);
-  
+
   const passwordError = validatePassword(formData.password);
   if (passwordError) errors.push(passwordError);
-  
+
   // Validate boss assignment
   if (!bossId) {
     errors.push('Debe asignar un jefe de mecánicos');
   }
-  
+
   return {
     isValid: errors.length === 0,
     errors

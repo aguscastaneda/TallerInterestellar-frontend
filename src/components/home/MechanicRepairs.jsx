@@ -53,20 +53,20 @@ const MechanicRepairs = () => {
       } else {
         setItems([]);
       }
-    } finally { 
-      setLoading(false); 
+    } finally {
+      setLoading(false);
     }
   };
 
   // Load data on component mount
-  useEffect(() => { 
-    loadData(); 
-    
+  useEffect(() => {
+    loadData();
+
     // Set up periodic refresh every 30 seconds
     const interval = setInterval(() => {
       loadData();
     }, 30000);
-    
+
     // Clean up interval on component unmount
     return () => clearInterval(interval);
   }, [roleKey, mechanicId, clientId]);
@@ -131,11 +131,11 @@ const MechanicRepairs = () => {
         {!loading && (
           <div className="flex w-full justify-center mb-3">
             <div className="flex bg-white rounded-full shadow p-1">
-              {['Todas','Pendiente','En reparacion','Finalizado'].map(s => (
+              {['Todas', 'Pendiente', 'En reparacion', 'Finalizado'].map(s => (
                 <button
                   key={s}
                   onClick={() => setStatusFilter(s)}
-                  className={`px-6 py-2 rounded-full text-xs border ${statusFilter===s ? 'bg-green-100 text-green-900 font-medium border-green-400' : 'text-gray-700 hover:bg-gray-100'}`}
+                  className={`px-6 py-2 rounded-full text-xs border ${statusFilter === s ? 'bg-green-100 text-green-900 font-medium border-green-400' : 'text-gray-700 hover:bg-gray-100'}`}
                 >
                   {s.replace('-', ' ')}
                 </button>
