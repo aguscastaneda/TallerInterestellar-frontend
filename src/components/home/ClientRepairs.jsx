@@ -253,7 +253,7 @@ const ClientRepairs = () => {
                           </Badge>
                         </div>
                         <p className="text-gray-600">
-                          {car.brand} {car.model} {car.year && `(${car.year})`}
+                          {car.brand} {car.model}
                         </p>
                       </div>
                     </div>
@@ -272,7 +272,7 @@ const ClientRepairs = () => {
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-gray-500">Vehículo</p>
-                        <p className="text-gray-900 truncate">{car.brand} {car.model} {car.year && `(${car.year})`}</p>
+                        <p className="text-gray-900 truncate">{car.brand} {car.model}</p>
                       </div>
                     </div>
 

@@ -4,14 +4,14 @@ import NavBar from '../NavBar';
 import { useAuth } from '../../contexts/AuthContext';
 import { useConfig } from '../../contexts/ConfigContext';
 import { carsService, usersService, requestsService, carStatesService } from '../../services/api';
-import { Button, Card, CardHeader, CardTitle, CardContent, CardFooter, Badge, Input, Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter } from '../ui';
+import { Button, Card, CardHeader, CardTitle, CardContent, CardFooter, Input, Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter } from '../ui';
 import { Plus, Car, Wrench, Settings, Eye, X, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { licensePlateValidator } from '../../utils/licensePlateValidator';
 import PropTypes from 'prop-types';
 
 const ClienteHome = () => {
   const { user } = useAuth();
-  const { getConstants } = useConfig();
+  const { getConstants, config } = useConfig();
   const [showAdd, setShowAdd] = useState(false);
   const [cars, setCars] = useState([]);
   const [form, setForm] = useState({ licensePlate: '', brand: '', model: '', year: '', kms: '', chassis: '' });
@@ -28,15 +28,28 @@ const ClienteHome = () => {
   const load = async () => {
     if (!clientId) return;
     try {
+      const isAuthorizedForMechanics = user?.role?.name === 'admin' ||
+        user?.role?.name === 'jefe' ||
+        user?.role?.name === 'recepcionista';
+
       const [carsRes, mechsRes] = await Promise.all([
         carsService.getByClient(clientId),
-        usersService.getMechanics()
+        isAuthorizedForMechanics ? usersService.getMechanics() : Promise.resolve({ data: { data: [] } })
       ]);
+
       setCars(carsRes.data.data || []);
-      setMechanics((mechsRes.data.data || []).map(m => ({ id: m.id, name: `${m.user.name} ${m.user.lastName}` })));
+
+      if (isAuthorizedForMechanics && mechsRes?.data?.data) {
+        setMechanics((mechsRes.data.data || []).map(m => ({ id: m.id, name: `${m.user.name} ${m.user.lastName}` })));
+      } else {
+        setMechanics([]);
+      }
     } catch (error) {
       console.error('Error loading data:', error);
       toast.error('Error cargando datos');
+
+      setCars([]);
+      setMechanics([]);
     }
   };
 
@@ -172,21 +185,20 @@ const ClienteHome = () => {
   };
 
   const getStatusIcon = (statusId) => {
-    const constants = getConstants();
-    if (statusId === constants.CAR_STATUS.ENTRADA) return <Car className="h-4 w-4" />;
-    if (statusId === constants.CAR_STATUS.PENDIENTE) return <Clock className="h-4 w-4" />;
-    if (statusId === constants.CAR_STATUS.EN_PROCESO) return <Wrench className="h-4 w-4" />;
-    if (statusId === constants.CAR_STATUS.FINALIZADO) return <CheckCircle className="h-4 w-4" />;
+    if (statusId === 1) return <Car className="h-4 w-4" />; // Entrada
+    if (statusId === 2) return <Clock className="h-4 w-4" />; // Pendiente
+    if (statusId === 3) return <Eye className="h-4 w-4" />; // En revisión
+    if (statusId === 4) return <X className="h-4 w-4" />; // Rechazado
+    if (statusId === 5) return <Wrench className="h-4 w-4" />; // En reparación
+    if (statusId === 6) return <CheckCircle className="h-4 w-4" />; // Finalizado
+    if (statusId === 7) return <CheckCircle className="h-4 w-4" />; // Entregado
+    if (statusId === 8) return <X className="h-4 w-4" />; // Cancelado
     return <AlertCircle className="h-4 w-4" />;
   };
 
-  const getStatusVariant = (statusId) => {
-    const constants = getConstants();
-    if (statusId === constants.CAR_STATUS.ENTRADA) return 'neutral';
-    if (statusId === constants.CAR_STATUS.PENDIENTE) return 'warning';
-    if (statusId === constants.CAR_STATUS.EN_PROCESO) return 'info';
-    if (statusId === constants.CAR_STATUS.FINALIZADO) return 'success';
-    return 'neutral';
+  const getStatusColor = (statusId) => {
+    const status = config.carStatuses?.find(s => s.id === statusId);
+    return status?.color || 'bg-gray-100 text-gray-800';
   };
 
   return (
@@ -394,13 +406,10 @@ const ClienteHome = () => {
                           <h3 className="text-lg font-semibold text-gray-900">
                             {car.licensePlate}
                           </h3>
-                          <Badge
-                            variant={getStatusVariant(car.statusId)}
-                            size="sm"
-                          >
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(car.statusId)}`}>
                             {getStatusIcon(car.statusId)}
                             <span className="ml-1">{car.status?.name || 'Sin estado'}</span>
-                          </Badge>
+                          </span>
                         </div>
 
 
@@ -472,21 +481,24 @@ const ClienteHome = () => {
                           />
                         </div>
 
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Mecánico preferido (opcional)
-                          </label>
-                          <select
-                            value={requestForm.preferredMechanicId}
-                            onChange={e => setRequestForm({ ...requestForm, preferredMechanicId: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                          >
-                            <option value="">Sin preferencia</option>
-                            {mechanics.map(m => (
-                              <option key={m.id} value={m.id}>{m.name}</option>
-                            ))}
-                          </select>
-                        </div>
+                        {/* Only show mechanic selection if user has permission */}
+                        {(user?.role?.name === 'admin' || user?.role?.name === 'jefe' || user?.role?.name === 'recepcionista') && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Mecánico preferido (opcional)
+                            </label>
+                            <select
+                              value={requestForm.preferredMechanicId}
+                              onChange={e => setRequestForm({ ...requestForm, preferredMechanicId: e.target.value })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                            >
+                              <option value="">Sin preferencia</option>
+                              {mechanics.map(m => (
+                                <option key={m.id} value={m.id}>{m.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
 
                         <div className="flex justify-end space-x-3">
                           <Button
@@ -518,6 +530,7 @@ const ClienteHome = () => {
         <CarDetailModal
           car={cars.find(c => c.id === detailCarId)}
           onClose={() => setDetailCarId(null)}
+          config={config}
         />
       )}
 
@@ -562,23 +575,24 @@ export default ClienteHome;
 
 
 
-const CarDetailModal = ({ car, onClose }) => {
+const CarDetailModal = ({ car, onClose, config }) => {
   if (!car) return null;
 
   const getStatusIcon = (statusId) => {
-    if (statusId === 1) return <Car className="h-4 w-4" />;
-    if (statusId === 2) return <Clock className="h-4 w-4" />;
-    if (statusId === 3) return <Wrench className="h-4 w-4" />;
-    if (statusId === 4) return <CheckCircle className="h-4 w-4" />;
-    return <AlertCircle className="h-4 w-4" />;
+    if (statusId === 1) return <Car className="h-4 w-4" />; // Entrada
+    if (statusId === 2) return <Clock className="h-4 w-4" />; // Pendiente
+    if (statusId === 3) return <Eye className="h-4 w-4" />; // En revisión
+    if (statusId === 4) return <X className="h-4 w-4" />; // Rechazado
+    if (statusId === 5) return <Wrench className="h-4 w-4" />; // En reparación
+    if (statusId === 6) return <CheckCircle className="h-4 w-4" />; // Finalizado
+    if (statusId === 7) return <CheckCircle className="h-4 w-4" />; // Entregado
+    if (statusId === 8) return <X className="h-4 w-4" />; // Cancelado
+    return <AlertCircle className="h-4 w-4" />; // Default
   };
 
-  const getStatusVariant = (statusId) => {
-    if (statusId === 1) return 'neutral';
-    if (statusId === 2) return 'warning';
-    if (statusId === 3) return 'info';
-    if (statusId === 4) return 'success';
-    return 'neutral';
+  const getStatusColor = (statusId) => {
+    const status = config.carStatuses?.find(s => s.id === statusId);
+    return status?.color || 'bg-gray-100 text-gray-800';
   };
 
   return (
@@ -634,13 +648,10 @@ const CarDetailModal = ({ car, onClose }) => {
               <div>
                 <label className="text-sm font-medium text-gray-500">Estado Actual</label>
                 <div className="flex items-center space-x-2 mt-1">
-                  <Badge
-                    variant={getStatusVariant(car.statusId)}
-                    size="md"
-                  >
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(car.statusId)}`}>
                     {getStatusIcon(car.statusId)}
                     <span className="ml-1">{car.status?.name || 'Sin estado'}</span>
-                  </Badge>
+                  </span>
                 </div>
               </div>
 
@@ -693,5 +704,12 @@ CarDetailModal.propTypes = {
     estimatedDate: PropTypes.string,
     priority: PropTypes.number
   }),
-  onClose: PropTypes.func
+  onClose: PropTypes.func,
+  config: PropTypes.shape({
+    carStatuses: PropTypes.arrayOf(PropTypes.shape({
+      id: PropTypes.number,
+      name: PropTypes.string,
+      color: PropTypes.string
+    }))
+  })
 };

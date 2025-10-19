@@ -134,7 +134,7 @@
   }
   
   .modal-content {
-    @apply bg-white rounded-xl shadow-strong max-w-lg w-full max-h-[90vh] overflow-y-auto;
+    @apply bg-white rounded-xl shadow-strong max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col;
   }
   
   .table-base {
@@ -186,5 +186,15 @@
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+  
+  /* Responsive text utilities */
+  .text-responsive {
+    font-size: clamp(0.875rem, 2.5vw, 1rem);
+  }
+  
+  /* Break words utilities */
+  .break-words-all {
+    word-break: break-all;
   }
 }

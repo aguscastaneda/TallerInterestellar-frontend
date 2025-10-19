@@ -25,8 +25,8 @@ import UserConfiguration from './components/UserConfiguration';
 import AcceptBudget from './components/home/AcceptBudget';
 import RejectBudget from './components/home/RejectBudget';
 
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+const ProtectedRoute = ({ children, allowedRoles = null }) => {
+  const { isAuthenticated, loading, roleKey } = useAuth();
 
   if (loading) {
     return (
@@ -39,11 +39,28 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRoles && !allowedRoles.includes(roleKey)) {
+    const roleRedirectMap = {
+      cliente: '/home/cliente',
+      mecanico: '/home/mecanico',
+      jefe: '/home/jefe',
+      admin: '/home/admin',
+      recepcionista: '/home/recepcionista'
+    };
+    const redirectPath = roleRedirectMap[roleKey] || '/home';
+    return <Navigate to={redirectPath} replace />;
+  }
+
+  return children;
 };
 
 ProtectedRoute.propTypes = {
   children: PropTypes.node.isRequired,
+  allowedRoles: PropTypes.arrayOf(PropTypes.string)
 };
 
 const PublicRoute = ({ children }) => {
@@ -130,7 +147,7 @@ const AppRoutes = () => {
       <Route
         path="/home/cliente"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['cliente']}>
             <ClienteHome />
           </ProtectedRoute>
         }
@@ -138,7 +155,7 @@ const AppRoutes = () => {
       <Route
         path="/home/client/help"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['cliente']}>
             <ClientHelp />
           </ProtectedRoute>
         }
@@ -146,7 +163,7 @@ const AppRoutes = () => {
       <Route
         path="/home/jefe/help"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['jefe']}>
             <JefeHelp />
           </ProtectedRoute>
         }
@@ -154,7 +171,7 @@ const AppRoutes = () => {
       <Route
         path="/home/mecanico/help"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['mecanico', 'jefe', 'admin']}>
             <MechanicHelp />
           </ProtectedRoute>
         }
@@ -162,7 +179,7 @@ const AppRoutes = () => {
       <Route
         path="/home/admin/help"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['admin']}>
             <AdminHelp />
           </ProtectedRoute>
         }
@@ -170,7 +187,7 @@ const AppRoutes = () => {
       <Route
         path="/home/recepcionista/help"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['recepcionista', 'admin']}>
             <ReceptionistHelp />
           </ProtectedRoute>
         }
@@ -178,7 +195,7 @@ const AppRoutes = () => {
       <Route
         path="/home/admin/historial"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['admin']}>
             <AdminHistorial />
           </ProtectedRoute>
         }
@@ -186,7 +203,7 @@ const AppRoutes = () => {
       <Route
         path="/home/client/repairs"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['cliente']}>
             <ClientRepairs />
           </ProtectedRoute>
         }
@@ -194,7 +211,7 @@ const AppRoutes = () => {
       <Route
         path="/home/mecanico/mis-arreglos"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['mecanico', 'jefe', 'admin']}>
             <MechanicRepairs />
           </ProtectedRoute>
         }
@@ -202,7 +219,7 @@ const AppRoutes = () => {
       <Route
         path="/home/mecanico"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['mecanico', 'jefe', 'admin']}>
             <MecanicoHome />
           </ProtectedRoute>
         }
@@ -210,7 +227,7 @@ const AppRoutes = () => {
       <Route
         path="/home/jefe"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['jefe', 'admin']}>
             <JefeHome />
           </ProtectedRoute>
         }
@@ -218,7 +235,7 @@ const AppRoutes = () => {
       <Route
         path="/home/admin"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['admin']}>
             <AdminHome />
           </ProtectedRoute>
         }
@@ -226,7 +243,7 @@ const AppRoutes = () => {
       <Route
         path="/home/recepcionista"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['recepcionista', 'admin']}>
             <RecepcionistaHome />
           </ProtectedRoute>
         }
@@ -242,7 +259,7 @@ const AppRoutes = () => {
       <Route
         path="/accept-budget"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['cliente']}>
             <AcceptBudget />
           </ProtectedRoute>
         }
@@ -250,7 +267,7 @@ const AppRoutes = () => {
       <Route
         path="/reject-budget"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['cliente']}>
             <RejectBudget />
           </ProtectedRoute>
         }

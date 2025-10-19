@@ -261,11 +261,6 @@ const RecepcionistaHome = () => {
                           <Badge className={getStatusColor(car.statusId)}>
                             {config.carStatuses?.find(s => s.id === car.statusId)?.name || 'Desconocido'}
                           </Badge>
-                          {car.year && (
-                            <span className="text-sm text-gray-500">
-                              Año: {car.year}
-                            </span>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -316,78 +311,70 @@ const RecepcionistaHome = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-3">
-                      <Mail className="h-5 w-5 text-gray-400" />
+                <div className="flex flex-col space-y-6">
+                  <div className="flex flex-col space-y-4">
+                    <div className="flex items-start space-x-3">
+                      <Mail className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
                       <div>
                         <p className="text-sm font-medium text-gray-700">Email</p>
-                        <p className="text-gray-900">{showClientDetails.user?.email}</p>
+                        <p className="text-gray-900 break-words">{showClientDetails.user?.email}</p>
                       </div>
                     </div>
 
                     {showClientDetails.user?.phone && (
-                      <div className="flex items-center space-x-3">
-                        <Phone className="h-5 w-5 text-gray-400" />
+                      <div className="flex items-start space-x-3">
+                        <Phone className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
                         <div>
                           <p className="text-sm font-medium text-gray-700">Teléfono</p>
-                          <p className="text-gray-900">{showClientDetails.user.phone}</p>
+                          <p className="text-gray-900 break-words">{showClientDetails.user.phone}</p>
                         </div>
                       </div>
                     )}
-                  </div>
 
-                  <div className="space-y-4">
                     {showClientDetails.address && (
-                      <div className="flex items-center space-x-3">
-                        <MapPin className="h-5 w-5 text-gray-400" />
+                      <div className="flex items-start space-x-3">
+                        <MapPin className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
                         <div>
                           <p className="text-sm font-medium text-gray-700">Dirección</p>
-                          <p className="text-gray-900">{showClientDetails.address}</p>
+                          <p className="text-gray-900 break-words">{showClientDetails.address}</p>
                         </div>
                       </div>
                     )}
 
-                    <div className="flex items-center space-x-3">
-                      <Calendar className="h-5 w-5 text-gray-400" />
+                    <div className="flex items-start space-x-3">
+                      <Calendar className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
                       <div>
                         <p className="text-sm font-medium text-gray-700">Cliente desde</p>
-                        <p className="text-gray-900">
+                        <p className="text-gray-900 break-words">
                           {(() => {
                             try {
-
                               const dateValue = showClientDetails.user?.createdAt || showClientDetails.createdAt;
-
                               if (!dateValue) return 'Fecha no disponible';
-
                               const date = new Date(dateValue);
-
                               if (isNaN(date.getTime())) return 'Fecha no disponible';
-
                               return date.toLocaleDateString('es-ES');
                             } catch (error) {
                               console.error('Error parsing date:', error);
                               return 'Fecha no disponible';
                             }
-                          })()
-                          }
+                          })()}
                         </p>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {showClientDetails.user?.cuil && (
-                  <div className="pt-4 border-t">
-                    <div className="flex items-center space-x-3">
-                      <User className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-700">CUIL</p>
-                        <p className="text-gray-900">{showClientDetails.user.cuil}</p>
+                  {showClientDetails.user?.cuil && (
+                    <div className="pt-4 border-t">
+                      <div className="flex items-start space-x-3">
+                        <User className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-700">CUIL</p>
+                          <p className="text-gray-900 break-words">{showClientDetails.user.cuil}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </ModalContent>
             <ModalFooter>
@@ -405,7 +392,7 @@ const RecepcionistaHome = () => {
               <ModalTitle>Confirmar Entrega de Vehículo</ModalTitle>
             </ModalHeader>
             <ModalContent>
-              <div className="space-y-6">
+              <div className="flex flex-col space-y-6">
                 <div className="text-center">
                   <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <CheckCircle className="h-8 w-8 text-green-600" />
@@ -420,7 +407,7 @@ const RecepcionistaHome = () => {
 
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h4 className="font-semibold text-gray-900 mb-3">Detalles del vehículo:</h4>
-                  <div className="space-y-2 text-sm">
+                  <div className="flex flex-col space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Patente:</span>
                       <span className="font-medium">{showDeliveryModal.licensePlate}</span>

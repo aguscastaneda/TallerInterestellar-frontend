@@ -90,6 +90,9 @@ export const repairsService = {
   delete: (id) => api.delete(`/repairs/${id}`),
   getByCar: (carId) => api.get(`/repairs/car/${carId}`),
   getByMechanic: (mechanicId) => api.get(`/repairs/mechanic/${mechanicId}`),
+  getGroupedByCar: (params = {}) => api.get('/repairs/grouped/by-car', { params }),
+  getAllRepairs: (params = {}) => api.get('/repairs/all-repairs', { params }),
+  getAllItems: (params = {}) => api.get('/repairs/all-items', { params }),
 };
 
 export const paymentsService = {

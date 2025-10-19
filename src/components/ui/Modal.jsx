@@ -1,6 +1,7 @@
 import { forwardRef, useEffect } from 'react';
 import { clsx } from 'clsx';
 import { X } from 'lucide-react';
+import PropTypes from 'prop-types';
 
 const Modal = forwardRef(({
   isOpen = false,
@@ -57,6 +58,13 @@ const Modal = forwardRef(({
 });
 
 Modal.displayName = 'Modal';
+Modal.propTypes = {
+  isOpen: PropTypes.bool,
+  onClose: PropTypes.func,
+  children: PropTypes.node,
+  size: PropTypes.oneOf(['sm', 'md', 'lg', 'xl', 'full']),
+  className: PropTypes.string,
+};
 
 const ModalHeader = forwardRef(({
   children,
@@ -70,11 +78,11 @@ const ModalHeader = forwardRef(({
       className={clsx('flex items-center justify-between p-6 border-b border-gray-200', className)}
       {...props}
     >
-      <div className="flex-1">{children}</div>
+      <div className="flex-1 min-w-0">{children}</div>
       {onClose && (
         <button
           onClick={onClose}
-          className="ml-4 p-1 rounded-lg hover:bg-gray-100 transition-colors"
+          className="ml-4 p-1 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
         >
           <X className="h-5 w-5 text-gray-500" />
         </button>
@@ -84,6 +92,11 @@ const ModalHeader = forwardRef(({
 });
 
 ModalHeader.displayName = 'ModalHeader';
+ModalHeader.propTypes = {
+  children: PropTypes.node,
+  onClose: PropTypes.func,
+  className: PropTypes.string,
+};
 
 const ModalTitle = forwardRef(({
   children,
@@ -93,7 +106,7 @@ const ModalTitle = forwardRef(({
   return (
     <h2
       ref={ref}
-      className={clsx('text-xl font-semibold text-gray-900', className)}
+      className={clsx('text-xl font-semibold text-gray-900 truncate', className)}
       {...props}
     >
       {children}
@@ -102,6 +115,10 @@ const ModalTitle = forwardRef(({
 });
 
 ModalTitle.displayName = 'ModalTitle';
+ModalTitle.propTypes = {
+  children: PropTypes.node,
+  className: PropTypes.string,
+};
 
 const ModalDescription = forwardRef(({
   children,
@@ -111,7 +128,7 @@ const ModalDescription = forwardRef(({
   return (
     <p
       ref={ref}
-      className={clsx('text-sm text-gray-600 mt-1', className)}
+      className={clsx('text-sm text-gray-600 mt-1 break-words', className)}
       {...props}
     >
       {children}
@@ -120,6 +137,10 @@ const ModalDescription = forwardRef(({
 });
 
 ModalDescription.displayName = 'ModalDescription';
+ModalDescription.propTypes = {
+  children: PropTypes.node,
+  className: PropTypes.string,
+};
 
 const ModalContent = forwardRef(({
   children,
@@ -129,7 +150,7 @@ const ModalContent = forwardRef(({
   return (
     <div
       ref={ref}
-      className={clsx('p-6', className)}
+      className={clsx('p-6 flex-1 overflow-y-auto', className)}
       {...props}
     >
       {children}
@@ -138,6 +159,10 @@ const ModalContent = forwardRef(({
 });
 
 ModalContent.displayName = 'ModalContent';
+ModalContent.propTypes = {
+  children: PropTypes.node,
+  className: PropTypes.string,
+};
 
 const ModalFooter = forwardRef(({
   children,
@@ -147,7 +172,7 @@ const ModalFooter = forwardRef(({
   return (
     <div
       ref={ref}
-      className={clsx('flex items-center justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50', className)}
+      className={clsx('flex flex-col sm:flex-row items-center justify-end space-y-2 sm:space-y-0 sm:space-x-3 p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0', className)}
       {...props}
     >
       {children}
@@ -156,5 +181,9 @@ const ModalFooter = forwardRef(({
 });
 
 ModalFooter.displayName = 'ModalFooter';
+ModalFooter.propTypes = {
+  children: PropTypes.node,
+  className: PropTypes.string,
+};
 
 export { Modal, ModalHeader, ModalTitle, ModalDescription, ModalContent, ModalFooter };

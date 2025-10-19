@@ -1,19 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 import NavBar from '../NavBar';
 import { useConfig } from '../../contexts/ConfigContext';
-import { repairsService, carStatesService } from '../../services/api';
+import { repairsService } from '../../services/api';
 import { Button, Card, CardContent, Badge, Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter, SegmentedControl } from '../ui';
 import { ArrowLeft, Wrench, User, Car, Calendar, DollarSign, Eye, Search } from 'lucide-react';
 import PropTypes from 'prop-types';
 
 const AdminHistorial = () => {
   const { config } = useConfig();
-  const [repairs, setRepairs] = useState([]);
-  const [allRepairs, setAllRepairs] = useState([]);
+  const [items, setItems] = useState([]);
+  const [allItems, setAllItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [showRepairDetails, setShowRepairDetails] = useState(null);
+  const [showItemDetails, setShowItemDetails] = useState(null);
   const [showModifyStatus, setShowModifyStatus] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -30,32 +30,72 @@ const AdminHistorial = () => {
 
   const carStatuses = config?.carStatuses || defaultStatuses;
 
-  const loadRepairs = async () => {
+  const loadAllItems = async (search = '') => {
     try {
       setLoading(true);
-      const response = await repairsService.getAll();
+
+      const params = {};
+      if (search.trim()) {
+        params.search = search.trim();
+      }
+
+      const response = await repairsService.getAllItems(params);
       if (response.data?.success && response.data?.data) {
-        setAllRepairs(response.data.data);
-        setRepairs(response.data.data);
+        setAllItems(response.data.data);
       } else {
-        setAllRepairs([]);
-        setRepairs([]);
+        setAllItems([]);
       }
     } catch (error) {
-      console.error('Error cargando historial de reparaciones:', error);
-      toast.error('Error cargando historial de reparaciones');
-      setAllRepairs([]);
-      setRepairs([]);
+      console.error('Error cargando historial:', error);
+      toast.error('Error cargando historial');
+      setAllItems([]);
     } finally {
       setLoading(false);
     }
   };
 
+
+  const applyFilters = (items, statusId, search) => {
+    let filteredItems = [...items];
+
+    if (statusId && statusId !== 'all') {
+      const statusIdInt = parseInt(statusId);
+      filteredItems = filteredItems.filter(item => {
+        if (item.type === 'repair') {
+          return item.statusId === statusIdInt;
+        } else {
+          return item.statusId === statusIdInt;
+        }
+      });
+    }
+
+    if (search && search.trim()) {
+      const searchTerm = search.trim().toLowerCase();
+      filteredItems = filteredItems.filter(item =>
+        (item.car?.licensePlate?.toLowerCase().includes(searchTerm) ||
+          item.licensePlate?.toLowerCase().includes(searchTerm)) ||
+        (item.car?.client?.user?.name?.toLowerCase().includes(searchTerm) ||
+          item.client?.user?.name?.toLowerCase().includes(searchTerm)) ||
+        (item.car?.client?.user?.lastName?.toLowerCase().includes(searchTerm) ||
+          item.client?.user?.lastName?.toLowerCase().includes(searchTerm)) ||
+        (item.mechanic?.user?.name?.toLowerCase().includes(searchTerm)) ||
+        (item.mechanic?.user?.lastName?.toLowerCase().includes(searchTerm)) ||
+        item.description?.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    return filteredItems;
+  };
+
   useEffect(() => {
-    loadRepairs();
+    loadAllItems();
   }, []);
 
-  const getRepairStatusColor = (carStatusId) => {
+  useEffect(() => {
+    setItems(applyFilters(allItems, selectedStatus, searchQuery));
+  }, [allItems, selectedStatus, searchQuery]);
+
+  const getRepairStatusColor = (statusId) => {
     const colors = {
       1: 'bg-gray-100 text-gray-800',    // Entrada
       2: 'bg-yellow-100 text-yellow-800', // Pendiente
@@ -66,63 +106,47 @@ const AdminHistorial = () => {
       7: 'bg-indigo-100 text-indigo-800', // Entregado
       8: 'bg-orange-100 text-orange-800'  // Cancelado
     };
-    return colors[carStatusId] || 'bg-gray-100 text-gray-800';
+    return colors[statusId] || 'bg-gray-100 text-gray-800';
   };
 
   const getStatusCount = (statusId) => {
-    if (statusId === 'all') return allRepairs.length;
-    return allRepairs.filter(repair => repair.car?.statusId === statusId).length;
+    if (statusId === 'all') {
+      return allItems.length;
+    }
+
+    const statusIdInt = parseInt(statusId);
+    const repairCount = allItems.filter(item =>
+      item.type === 'repair' && item.statusId === statusIdInt
+    ).length;
+
+    let carWithoutRepairsCount = 0;
+    if (statusIdInt === 1) {
+      carWithoutRepairsCount = allItems.filter(item =>
+        item.type === 'car' && item.statusId === statusIdInt
+      ).length;
+    }
+
+    return repairCount + carWithoutRepairsCount;
   };
 
   const handleStatusFilter = (statusId) => {
     setSelectedStatus(statusId);
-    let filteredRepairs = allRepairs;
-
-    if (statusId !== 'all') {
-      filteredRepairs = allRepairs.filter(repair => repair.car?.statusId === statusId);
-    }
-
-    if (searchQuery.trim()) {
-      filteredRepairs = filteredRepairs.filter(repair =>
-        repair.car?.licensePlate?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        repair.car?.client?.user?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        repair.car?.client?.user?.lastName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        repair.mechanic?.user?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        repair.mechanic?.user?.lastName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        repair.description?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    setRepairs(filteredRepairs);
   };
 
   const handleSearch = (query) => {
     setSearchQuery(query);
-    let filteredRepairs = allRepairs;
-
-    if (selectedStatus !== 'all') {
-      filteredRepairs = allRepairs.filter(repair => repair.car?.statusId === selectedStatus);
-    }
-
-    if (query.trim()) {
-      filteredRepairs = filteredRepairs.filter(repair =>
-        repair.car?.licensePlate?.toLowerCase().includes(query.toLowerCase()) ||
-        repair.car?.client?.user?.name?.toLowerCase().includes(query.toLowerCase()) ||
-        repair.car?.client?.user?.lastName?.toLowerCase().includes(query.toLowerCase()) ||
-        repair.mechanic?.user?.name?.toLowerCase().includes(query.toLowerCase()) ||
-        repair.mechanic?.user?.lastName?.toLowerCase().includes(query.toLowerCase()) ||
-        repair.description?.toLowerCase().includes(query.toLowerCase())
-      );
-    }
-
-    setRepairs(filteredRepairs);
+    loadAllItems(query);
   };
 
-  const handleModifyStatus = (repair) => {
-    setShowModifyStatus(repair);
+  const handleModifyStatus = (item) => {
+    setShowModifyStatus(item);
   };
 
-  const tabOptions = [
+  const refreshData = () => {
+    loadAllItems(searchQuery);
+  };
+
+  const tabOptions = useMemo(() => [
     {
       value: 'all',
       label: 'Todos',
@@ -135,9 +159,9 @@ const AdminHistorial = () => {
       icon: <Wrench className="h-4 w-4" />,
       count: getStatusCount(status.id)
     })) || [])
-  ];
+  ], [allItems, carStatuses]);
 
-  if (loading) {
+  if (loading && allItems.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50">
         <NavBar roleBadge={true} showHistory={false} />
@@ -167,18 +191,18 @@ const AdminHistorial = () => {
             </Button>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Historial Completo de Reparaciones
+            Historial Completo de Autos y Reparaciones
           </h1>
           <p className="text-gray-600">
-            Todas las reparaciones del sistema de todos los clientes
+            Todos los autos y reparaciones del sistema
           </p>
         </div>
 
         {/* Search Bar */}
         <Card className="mb-8">
           <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className="flex-1">
+            <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
+              <div className="flex-1 w-full">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <input
@@ -206,7 +230,7 @@ const AdminHistorial = () => {
         {/* Status Filter */}
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Filtrar por Estado del Vehículo
+            Filtrar por Estado
           </h2>
           <SegmentedControl
             options={tabOptions}
@@ -216,78 +240,99 @@ const AdminHistorial = () => {
           />
         </div>
 
-        {/* Repairs List */}
+        {/* Items List */}
         <div className="space-y-4">
-          {repairs.length === 0 ? (
+          {items.length === 0 ? (
             <Card className="text-center py-12">
               <CardContent>
                 <Wrench className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No hay reparaciones
+                  No hay elementos
                 </h3>
                 <p className="text-gray-600">
                   {searchQuery
-                    ? `No se encontraron reparaciones que coincidan con "${searchQuery}"`
+                    ? `No se encontraron autos o reparaciones que coincidan con "${searchQuery}"`
                     : selectedStatus === 'all'
-                      ? 'No hay reparaciones registradas en el sistema'
-                      : `No hay reparaciones en estado ${carStatuses?.find(s => s.id === selectedStatus)?.name || 'seleccionado'}`
+                      ? 'No hay autos ni reparaciones registrados en el sistema'
+                      : `No hay elementos en estado ${carStatuses?.find(s => s.id === selectedStatus)?.name || 'seleccionado'}`
                   }
                 </p>
               </CardContent>
             </Card>
           ) : (
-            repairs.map((repair) => (
-              <Card key={repair.id} className="card-hover">
+            items.map((item) => (
+              <Card key={`${item.type}-${item.id}`} className="card-hover">
                 <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
                       <div className="flex-shrink-0">
                         <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                          <Wrench className="h-6 w-6 text-blue-600" />
+                          {item.type === 'repair' ? (
+                            <Wrench className="h-6 w-6 text-blue-600" />
+                          ) : (
+                            <Car className="h-6 w-6 text-blue-600" />
+                          )}
                         </div>
                       </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900">
-                          {repair.car?.licensePlate} - {repair.car?.brand} {repair.car?.model}
-                        </h3>
-                        <p className="text-sm text-gray-600 mb-2">
-                          <User className="inline h-4 w-4 mr-1" />
-                          Cliente: {repair.car?.client?.user?.name} {repair.car?.client?.user?.lastName}
-                        </p>
-                        <p className="text-sm text-gray-600 mb-2">
-                          <Wrench className="inline h-4 w-4 mr-1" />
-                          Mecánico: {repair.mechanic?.user?.name} {repair.mechanic?.user?.lastName}
-                        </p>
-                        <div className="flex items-center space-x-4 mt-2">
-                          <Badge className={getRepairStatusColor(repair.car?.statusId)}>
-                            {carStatuses?.find(s => s.id === repair.car?.statusId)?.name || 'Desconocido'}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <h3 className="font-semibold text-gray-900 text-lg truncate">
+                            {item.type === 'repair' ? 'Reparación' : 'Auto'} ID: {item.id} - {item.car?.licensePlate || item.licensePlate}
+                          </h3>
+                          <Badge className={getRepairStatusColor(item.statusId)}>
+                            {carStatuses?.find(s => s.id === item.statusId)?.name || 'Desconocido'}
                           </Badge>
+                          {item.type === 'car' && (
+                            <Badge className="bg-orange-100 text-orange-800">
+                              Sin Reparaciones
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 mb-2 flex items-center flex-wrap gap-1">
+                          <Car className="inline h-4 w-4 mr-1 flex-shrink-0" />
+                          <span className="truncate">Vehículo: {item.car?.brand || item.brand} {item.car?.model || item.model}</span>
+                        </p>
+                        <p className="text-sm text-gray-600 mb-2 flex items-center flex-wrap gap-1">
+                          <User className="inline h-4 w-4 mr-1 flex-shrink-0" />
+                          <span className="truncate">Cliente: {item.car?.client?.user?.name || item.client?.user?.name} {item.car?.client?.user?.lastName || item.client?.user?.lastName}</span>
+                        </p>
+                        {item.mechanic && (
+                          <p className="text-sm text-gray-600 mb-2 flex items-center flex-wrap gap-1">
+                            <Wrench className="inline h-4 w-4 mr-1 flex-shrink-0" />
+                            <span className="truncate">Mecánico: {item.mechanic?.user?.name} {item.mechanic?.user?.lastName}</span>
+                          </p>
+                        )}
+                        <div className="flex flex-wrap items-center gap-4 mt-2">
                           <span className="text-sm text-gray-500 flex items-center">
-                            <DollarSign className="h-4 w-4 mr-1" />
-                            ${parseFloat(repair.cost).toLocaleString()}
+                            <DollarSign className="h-4 w-4 mr-1 flex-shrink-0" />
+                            <span>${parseFloat(item.cost || 0).toLocaleString()}</span>
                           </span>
                           <span className="text-sm text-gray-500 flex items-center">
-                            <Calendar className="h-4 w-4 mr-1" />
-                            {new Date(repair.createdAt).toLocaleDateString('es-ES')}
+                            <Calendar className="h-4 w-4 mr-1 flex-shrink-0" />
+                            <span>{new Date(item.createdAt).toLocaleDateString('es-ES')}</span>
                           </span>
                         </div>
+                        <p className="text-sm text-gray-700 mt-2 break-words">
+                          {item.description}
+                        </p>
                       </div>
                     </div>
-                    <div className="flex-shrink-0">
+                    <div className="flex-shrink-0 flex flex-col sm:flex-row sm:items-center gap-2">
                       <Button
-                        onClick={() => setShowRepairDetails(repair)}
+                        onClick={() => setShowItemDetails(item)}
                         variant="ghost"
                         size="sm"
                         leftIcon={<Eye className="h-4 w-4" />}
+                        className="w-full sm:w-auto"
                       >
                         Ver Detalles
                       </Button>
-                      {selectedStatus === 'all' && (
+                      {item.type === 'repair' && selectedStatus === 'all' && (
                         <Button
-                          onClick={() => handleModifyStatus(repair)}
+                          onClick={() => handleModifyStatus(item)}
                           variant="primary"
                           size="sm"
-                          className="ml-2"
+                          className="w-full sm:w-auto"
                         >
                           Modificar Estado
                         </Button>
@@ -300,39 +345,41 @@ const AdminHistorial = () => {
           )}
         </div>
 
-        {/* Detalles modal arreglos */}
-        {showRepairDetails && (
-          <Modal isOpen={!!showRepairDetails} onClose={() => setShowRepairDetails(null)}>
+        {/* Detalles modal */}
+        {showItemDetails && (
+          <Modal isOpen={!!showItemDetails} onClose={() => setShowItemDetails(null)} size="lg">
             <ModalHeader>
-              <ModalTitle>Detalles de la Reparación</ModalTitle>
+              <ModalTitle>
+                {showItemDetails.type === 'car' ? 'Detalles del Auto' : 'Detalles de la Reparación'}
+              </ModalTitle>
             </ModalHeader>
             <ModalContent>
-              <div className="space-y-6">
+              <div className="flex flex-col space-y-6">
                 {/* info auto */}
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
                     <Car className="h-5 w-5 mr-2" />
                     Información del Vehículo
                   </h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
+                  <div className="flex flex-col space-y-3 text-sm">
+                    <div className="break-words">
                       <span className="text-gray-600">Patente:</span>
-                      <p className="font-medium">{showRepairDetails.car?.licensePlate}</p>
+                      <p className="font-medium">{showItemDetails.car?.licensePlate || showItemDetails.licensePlate}</p>
                     </div>
-                    <div>
+                    <div className="break-words">
                       <span className="text-gray-600">Vehículo:</span>
-                      <p className="font-medium">{showRepairDetails.car?.brand} {showRepairDetails.car?.model}</p>
+                      <p className="font-medium">{showItemDetails.car?.brand || showItemDetails.brand} {showItemDetails.car?.model || showItemDetails.model}</p>
                     </div>
-                    <div>
-                      <span className="text-gray-600">Estado:</span>
-                      <Badge className={`mt-1 ${getRepairStatusColor(showRepairDetails.car?.statusId)}`}>
-                        {carStatuses?.find(s => s.id === showRepairDetails.car?.statusId)?.name || 'Desconocido'}
+                    <div className="break-words">
+                      <span className="text-gray-600">Estado del Auto:</span>
+                      <Badge className={`mt-1 ${getRepairStatusColor(showItemDetails.car?.statusId || showItemDetails.statusId)}`}>
+                        {carStatuses?.find(s => s.id === (showItemDetails.car?.statusId || showItemDetails.statusId))?.name || 'Desconocido'}
                       </Badge>
                     </div>
-                    {showRepairDetails.car?.kms && (
-                      <div>
+                    {(showItemDetails.car?.kms || showItemDetails.kms) && (
+                      <div className="break-words">
                         <span className="text-gray-600">Kilómetros:</span>
-                        <p className="font-medium">{showRepairDetails.car.kms.toLocaleString()} km</p>
+                        <p className="font-medium">{(showItemDetails.car?.kms || showItemDetails.kms).toLocaleString()} km</p>
                       </div>
                     )}
                   </div>
@@ -344,69 +391,79 @@ const AdminHistorial = () => {
                     <User className="h-5 w-5 mr-2" />
                     Información del Cliente
                   </h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
+                  <div className="flex flex-col space-y-3 text-sm">
+                    <div className="break-words">
                       <span className="text-gray-600">Nombre:</span>
-                      <p className="font-medium">{showRepairDetails.car?.client?.user?.name} {showRepairDetails.car?.client?.user?.lastName}</p>
+                      <p className="font-medium">{showItemDetails.car?.client?.user?.name || showItemDetails.client?.user?.name} {showItemDetails.car?.client?.user?.lastName || showItemDetails.client?.user?.lastName}</p>
                     </div>
-                    <div>
+                    <div className="break-words">
                       <span className="text-gray-600">Email:</span>
-                      <p className="font-medium">{showRepairDetails.car?.client?.user?.email}</p>
+                      <p className="font-medium break-words">{showItemDetails.car?.client?.user?.email || showItemDetails.client?.user?.email}</p>
                     </div>
-                    {showRepairDetails.car?.client?.user?.phone && (
-                      <div>
+                    {(showItemDetails.car?.client?.user?.phone || showItemDetails.client?.user?.phone) && (
+                      <div className="break-words">
                         <span className="text-gray-600">Teléfono:</span>
-                        <p className="font-medium">{showRepairDetails.car?.client?.user?.phone}</p>
+                        <p className="font-medium">{showItemDetails.car?.client?.user?.phone || showItemDetails.client?.user?.phone}</p>
                       </div>
                     )}
                   </div>
                 </div>
 
                 {/* info mecanico */}
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
-                    <Wrench className="h-5 w-5 mr-2" />
-                    Información del Mecánico
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-600">Mecánico:</span>
-                      <p className="font-medium">{showRepairDetails.mechanic?.user?.name} {showRepairDetails.mechanic?.user?.lastName}</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Fecha de Reparación:</span>
-                      <p className="font-medium">{new Date(showRepairDetails.createdAt).toLocaleDateString('es-ES')}</p>
+                {showItemDetails.mechanic && (
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                      <Wrench className="h-5 w-5 mr-2" />
+                      Información del Mecánico
+                    </h4>
+                    <div className="flex flex-col space-y-3 text-sm">
+                      <div className="break-words">
+                        <span className="text-gray-600">Mecánico:</span>
+                        <p className="font-medium">{showItemDetails.mechanic?.user?.name} {showItemDetails.mechanic?.user?.lastName}</p>
+                      </div>
+                      <div className="break-words">
+                        <span className="text-gray-600">Fecha:</span>
+                        <p className="font-medium">{new Date(showItemDetails.createdAt).toLocaleDateString('es-ES')}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
-                {/* detalles arreglo */}
-                <div className="bg-yellow-50 p-4 rounded-lg">
+                {/* detalles */}
+                <div className={`p-4 rounded-lg ${showItemDetails.type === 'car' ? 'bg-orange-50' : 'bg-yellow-50'}`}>
                   <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
                     <DollarSign className="h-5 w-5 mr-2" />
-                    Detalles de la Reparación
+                    {showItemDetails.type === 'car' ? 'Detalles del Auto' : 'Detalles de la Reparación'}
                   </h4>
-                  <div className="space-y-3">
-                    <div>
+                  <div className="flex flex-col space-y-3">
+                    <div className="break-words">
+                      <span className="text-gray-600">Estado:</span>
+                      <Badge className={`mt-1 ${getRepairStatusColor(showItemDetails.statusId)}`}>
+                        {carStatuses?.find(s => s.id === showItemDetails.statusId)?.name || 'Desconocido'}
+                      </Badge>
+                    </div>
+                    <div className="break-words">
                       <span className="text-gray-600">Descripción:</span>
-                      <p className="font-medium mt-1">{showRepairDetails.description}</p>
+                      <p className="font-medium mt-1 break-words">{showItemDetails.description}</p>
                     </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-600">Costo:</span>
-                        <p className="font-medium text-lg text-green-600">${parseFloat(showRepairDetails.cost).toLocaleString()}</p>
+                    {showItemDetails.type === 'repair' && (
+                      <div className="flex flex-col space-y-3 text-sm">
+                        <div className="break-words">
+                          <span className="text-gray-600">Costo:</span>
+                          <p className="font-medium text-lg text-green-600">${parseFloat(showItemDetails.cost || 0).toLocaleString()}</p>
+                        </div>
+                        <div className="break-words">
+                          <span className="text-gray-600">Garantía:</span>
+                          <p className="font-medium">{showItemDetails.warranty || 0} días</p>
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-gray-600">Garantía:</span>
-                        <p className="font-medium">{showRepairDetails.warranty} días</p>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>
             </ModalContent>
             <ModalFooter>
-              <Button onClick={() => setShowRepairDetails(null)} variant="ghost">
+              <Button onClick={() => setShowItemDetails(null)} variant="ghost">
                 Cerrar
               </Button>
             </ModalFooter>
@@ -414,12 +471,12 @@ const AdminHistorial = () => {
         )}
 
         {/* Modificar estado modal */}
-        {showModifyStatus && (
+        {showModifyStatus && showModifyStatus.type === 'repair' && (
           <ModifyStatusModal
-            repair={showModifyStatus}
+            item={showModifyStatus}
             onClose={() => setShowModifyStatus(null)}
             carStatuses={carStatuses}
-            onStatusChange={loadRepairs}
+            onStatusChange={refreshData}
           />
         )}
       </div>
@@ -427,8 +484,8 @@ const AdminHistorial = () => {
   );
 };
 
-const ModifyStatusModal = ({ repair, onClose, carStatuses, onStatusChange }) => {
-  const [selectedStatus, setSelectedStatus] = useState(repair.car?.statusId || '');
+const ModifyStatusModal = ({ item, onClose, carStatuses, onStatusChange }) => {
+  const [selectedStatus, setSelectedStatus] = useState(item.statusId || '');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -440,44 +497,47 @@ const ModifyStatusModal = ({ repair, onClose, carStatuses, onStatusChange }) => 
 
     setLoading(true);
     try {
-      await carStatesService.transition(repair.car.id, selectedStatus, description);
-      toast.success('Estado actualizado exitosamente');
+      await repairsService.update(item.id, { statusId: parseInt(selectedStatus) });
+      toast.success('Estado de la reparación actualizado exitosamente');
       onStatusChange();
       onClose();
     } catch (error) {
-      console.error('Error updating car status:', error);
-      toast.error('Error al actualizar el estado');
+      console.error('Error updating repair status:', error);
+      toast.error('Error al actualizar el estado de la reparación');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Modal isOpen={!!repair} onClose={onClose}>
+    <Modal isOpen={!!item} onClose={onClose} size="md">
       <ModalHeader>
-        <ModalTitle>Modificar Estado del Vehículo</ModalTitle>
+        <ModalTitle>Modificar Estado de la Reparación</ModalTitle>
       </ModalHeader>
       <ModalContent>
-        <div className="space-y-4">
-          <div>
+        <div className="flex flex-col space-y-4">
+          <div className="break-words">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Vehículo
+              Reparación
             </label>
             <p className="text-lg font-semibold text-gray-900">
-              {repair.car?.licensePlate} - {repair.car?.brand} {repair.car?.model}
+              {item.car?.licensePlate} - {item.car?.brand} {item.car?.model}
+            </p>
+            <p className="text-sm text-gray-600 mt-1 break-words">
+              {item.description}
             </p>
           </div>
 
-          <div>
+          <div className="break-words">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Estado Actual
             </label>
-            <Badge className={getRepairStatusColor(repair.car?.statusId)}>
-              {carStatuses?.find(s => s.id === repair.car?.statusId)?.name || 'Desconocido'}
+            <Badge className={getRepairStatusColor(item.statusId)}>
+              {carStatuses?.find(s => s.id === item.statusId)?.name || 'Desconocido'}
             </Badge>
           </div>
 
-          <div>
+          <div className="break-words">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Nuevo Estado *
             </label>
@@ -495,7 +555,7 @@ const ModifyStatusModal = ({ repair, onClose, carStatuses, onStatusChange }) => 
             </select>
           </div>
 
-          <div>
+          <div className="break-words">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Descripción (opcional)
             </label>
@@ -522,7 +582,11 @@ const ModifyStatusModal = ({ repair, onClose, carStatuses, onStatusChange }) => 
 };
 
 ModifyStatusModal.propTypes = {
-  repair: PropTypes.shape({
+  item: PropTypes.shape({
+    id: PropTypes.number,
+    type: PropTypes.string,
+    statusId: PropTypes.number,
+    description: PropTypes.string,
     car: PropTypes.shape({
       id: PropTypes.number,
       licensePlate: PropTypes.string,

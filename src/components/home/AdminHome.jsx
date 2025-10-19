@@ -32,6 +32,7 @@ const AdminHome = () => {
   const [searchResult, setSearchResult] = useState(null);
   const [users, setUsers] = useState([]);
   const [bosses, setBosses] = useState([]);
+  const [clientsWithCars, setClientsWithCars] = useState({});
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [showUserDetails, setShowUserDetails] = useState(null);
@@ -93,6 +94,20 @@ const AdminHome = () => {
       console.error('Error loading bosses:', e);
       toast.error('Error loading bosses: ' + (e.response?.data?.message || e.message));
       setBosses([]);
+    }
+  };
+
+  const loadClientCars = async (clientId) => {
+    try {
+      const res = await carsService.getByClient(clientId);
+      if (res.data?.success && res.data?.data) {
+        setClientsWithCars(prev => ({
+          ...prev,
+          [clientId]: res.data.data
+        }));
+      }
+    } catch (e) {
+      console.error('Error loading client cars:', e);
     }
   };
 
@@ -213,6 +228,14 @@ const AdminHome = () => {
 
   const getRoleName = (user) => {
     return user.role?.name || 'Desconocido';
+  };
+
+  const handleViewUserDetails = async (userItem) => {
+    if (userItem.role?.id === ROLE_IDS.CLIENT && userItem.client?.id) {
+      await loadClientCars(userItem.client.id);
+    }
+
+    setShowUserDetails(userItem);
   };
 
   return (
@@ -525,7 +548,7 @@ const AdminHome = () => {
                     </div>
                     <div className="flex items-center space-x-2">
                       <Button
-                        onClick={() => setShowUserDetails(userItem)}
+                        onClick={() => handleViewUserDetails(userItem)}
                         variant="ghost"
                         size="sm"
                         leftIcon={<Eye className="h-4 w-4" />}
@@ -559,7 +582,7 @@ const AdminHome = () => {
 
         {/* Modal de detalles de usuario */}
         {showUserDetails && (
-          <Modal isOpen={!!showUserDetails} onClose={() => setShowUserDetails(null)}>
+          <Modal isOpen={!!showUserDetails} onClose={() => setShowUserDetails(null)} size="lg">
             <ModalHeader>
               <ModalTitle>
                 Detalles de {getRoleName(showUserDetails)}
@@ -581,49 +604,129 @@ const AdminHome = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex flex-col space-y-6">
                   <div className="space-y-4">
-                    <div className="flex items-center space-x-3">
-                      <Mail className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-700">Email</p>
-                        <p className="text-gray-900">{showUserDetails.email}</p>
+                    <div className="flex flex-col">
+                      <div className="flex items-start space-x-3">
+                        <Mail className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-700">Email</p>
+                          <p className="text-gray-900 break-words">{showUserDetails.email}</p>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-center space-x-3">
-                      <Shield className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-700">CUIL</p>
-                        <p className="text-gray-900">{showUserDetails.cuil || 'No especificado'}</p>
+                      <div className="flex items-start space-x-3 mt-3">
+                        <Shield className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-700">CUIL</p>
+                          <p className="text-gray-900 break-words">{showUserDetails.cuil || 'No especificado'}</p>
+                        </div>
                       </div>
-                    </div>
-                  </div>
 
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-3">
-                      <Phone className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-700">Teléfono</p>
-                        <p className="text-gray-900">{showUserDetails.phone || 'No especificado'}</p>
+                      <div className="flex items-start space-x-3 mt-3">
+                        <Phone className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-700">Teléfono</p>
+                          <p className="text-gray-900 break-words">{showUserDetails.phone || 'No especificado'}</p>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-center space-x-3">
-                      <Calendar className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-700">Fecha de creación</p>
-                        <p className="text-gray-900">
-                          {new Date(showUserDetails.createdAt).toLocaleDateString('es-ES', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })}
-                        </p>
+                      <div className="flex items-start space-x-3 mt-3">
+                        <Calendar className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-700">Fecha de creación</p>
+                          <p className="text-gray-900 break-words">
+                            {new Date(showUserDetails.createdAt).toLocaleDateString('es-ES', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
+
+                {/* Role-specific information */}
+                {showUserDetails.role?.id === ROLE_IDS.CLIENT && showUserDetails.client?.id && (
+                  <div className="pt-4 border-t">
+                    <h4 className="font-semibold text-gray-900 mb-3">Vehículos Registrados</h4>
+                    {clientsWithCars[showUserDetails.client.id] && clientsWithCars[showUserDetails.client.id].length > 0 ? (
+                      <div className="space-y-3 max-h-60 overflow-y-auto">
+                        {clientsWithCars[showUserDetails.client.id].map(car => (
+                          <div key={car.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center space-x-3 min-w-0">
+                              <Car className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                              <div className="min-w-0">
+                                <p className="font-medium text-gray-900 truncate">{car.licensePlate}</p>
+                                <p className="text-sm text-gray-600 truncate">{car.brand} {car.model}</p>
+                              </div>
+                            </div>
+                            <Badge variant="secondary" className="flex-shrink-0">
+                              {car.status?.name || 'Desconocido'}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-600">No hay vehículos registrados para este cliente.</p>
+                    )}
+                  </div>
+                )}
+
+                {showUserDetails.role?.id === ROLE_IDS.MECHANIC && showUserDetails.mechanic?.boss && (
+                  <div className="pt-4 border-t">
+                    <h4 className="font-semibold text-gray-900 mb-3">Jefe de Mecánicos</h4>
+                    <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                      <Users className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 truncate">
+                          {showUserDetails.mechanic.boss.user.name} {showUserDetails.mechanic.boss.user.lastName}
+                        </p>
+                        <p className="text-sm text-gray-600 break-words">
+                          {showUserDetails.mechanic.boss.user.email}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {showUserDetails.role?.id === ROLE_IDS.MECHANIC && !showUserDetails.mechanic?.boss && (
+                  <div className="pt-4 border-t">
+                    <h4 className="font-semibold text-gray-900 mb-3">Jefe de Mecánicos</h4>
+                    <p className="text-gray-600">Este mecánico no tiene un jefe asignado.</p>
+                  </div>
+                )}
+
+                {showUserDetails.role?.id === ROLE_IDS.BOSS && showUserDetails.boss?.mechanics?.length > 0 && (
+                  <div className="pt-4 border-t">
+                    <h4 className="font-semibold text-gray-900 mb-3">Mecánicos a Cargo</h4>
+                    <div className="space-y-3 max-h-60 overflow-y-auto">
+                      {showUserDetails.boss.mechanics.map(mechanic => (
+                        <div key={mechanic.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center space-x-3 min-w-0">
+                            <Wrench className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                            <div className="min-w-0">
+                              <p className="font-medium text-gray-900 truncate">{mechanic.user.name} {mechanic.user.lastName}</p>
+                              <p className="text-sm text-gray-600 break-words">{mechanic.user.email}</p>
+                            </div>
+                          </div>
+                          <Badge variant={mechanic.user.active ? 'success' : 'danger'} className="flex-shrink-0">
+                            {mechanic.user.active ? 'Activo' : 'Inactivo'}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {showUserDetails.role?.id === ROLE_IDS.BOSS && (!showUserDetails.boss?.mechanics || showUserDetails.boss.mechanics.length === 0) && (
+                  <div className="pt-4 border-t">
+                    <h4 className="font-semibold text-gray-900 mb-3">Mecánicos a Cargo</h4>
+                    <p className="text-gray-600">Este jefe no tiene mecánicos asignados.</p>
+                  </div>
+                )}
 
                 <div className="pt-4 border-t">
                   <div className="flex items-center space-x-3">

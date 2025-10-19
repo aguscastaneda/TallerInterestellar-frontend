@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { api } from '../services/api';
 
 const AuthContext = createContext();
@@ -47,7 +48,6 @@ export const AuthProvider = ({ children }) => {
       setToken(newToken);
       localStorage.setItem('token', newToken);
 
-
       api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
 
       return { success: true };
@@ -63,7 +63,6 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await api.post('/auth/register', userData);
-
 
       if (response.data.success && response.data.data.token) {
         const { user: userData, token: newToken } = response.data.data;
@@ -97,6 +96,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const isAuthenticated = !!user && !!token;
+
   const normalizeRoleName = (name) => {
     if (!name) return null;
     const n = String(name).trim().toLowerCase();
@@ -139,3 +139,9 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+
+AuthProvider.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export default AuthContext;
