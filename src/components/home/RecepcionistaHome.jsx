@@ -7,7 +7,7 @@ import { Button, Card, CardContent, Badge, Modal, ModalHeader, ModalTitle, Modal
 import { Car, Eye, CheckCircle, User, Mail, Phone, Calendar, MapPin } from 'lucide-react';
 
 const RecepcionistaHome = () => {
-  const { config } = useConfig();
+  const { config, getStatusColor } = useConfig();
   const [query, setQuery] = useState('');
   const [searchResult, setSearchResult] = useState(null);
   const [cars, setCars] = useState([]);
@@ -65,18 +65,8 @@ const RecepcionistaHome = () => {
     }
   };
 
-  const getStatusColor = (statusId) => {
-    const colors = {
-      1: 'bg-gray-100 text-gray-800',
-      2: 'bg-yellow-100 text-yellow-800',
-      3: 'bg-blue-100 text-blue-800',
-      4: 'bg-red-100 text-red-800',
-      5: 'bg-purple-100 text-purple-800',
-      6: 'bg-green-100 text-green-800',
-      7: 'bg-indigo-100 text-indigo-800',
-      8: 'bg-orange-100 text-orange-800'
-    };
-    return colors[statusId] || 'bg-gray-100 text-gray-800';
+  const getStatusColorForCar = (statusId) => {
+    return getStatusColor(statusId);
   };
 
   const getStatusCount = (statusId) => {
@@ -180,7 +170,7 @@ const RecepcionistaHome = () => {
                         Cliente: {searchResult.client?.user?.name} {searchResult.client?.user?.lastName}
                       </p>
                       <div className="mt-2">
-                        <Badge className={getStatusColor(searchResult.statusId)}>
+                        <Badge className={getStatusColorForCar(searchResult.statusId)}>
                           {config.carStatuses?.find(s => s.id === searchResult.statusId)?.name || 'Desconocido'}
                         </Badge>
                       </div>
@@ -258,7 +248,7 @@ const RecepcionistaHome = () => {
                           Cliente: {car.client?.user?.name} {car.client?.user?.lastName}
                         </p>
                         <div className="flex items-center space-x-4 mt-2">
-                          <Badge className={getStatusColor(car.statusId)}>
+                          <Badge className={getStatusColorForCar(car.statusId)}>
                             {config.carStatuses?.find(s => s.id === car.statusId)?.name || 'Desconocido'}
                           </Badge>
                         </div>

@@ -3,10 +3,11 @@ import { toast } from 'react-hot-toast';
 import NavBar from '../NavBar';
 import { useAuth } from '../../contexts/AuthContext';
 import { useConfig } from '../../contexts/ConfigContext';
-import { carsService, usersService, requestsService, carStatesService } from '../../services/api';
+import { carsService, usersService, requestsService } from '../../services/api';
 import { Button, Card, CardHeader, CardTitle, CardContent, CardFooter, Input, Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter } from '../ui';
-import { Plus, Car, Wrench, Settings, Eye, X, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Plus, Car, Wrench, Settings, Eye, X, CheckCircle, Clock, AlertCircle, Trash2 } from 'lucide-react';
 import { licensePlateValidator } from '../../utils/licensePlateValidator';
+import ProblemSelector from '../repair/ProblemSelector';
 import PropTypes from 'prop-types';
 
 const ClienteHome = () => {
@@ -21,6 +22,8 @@ const ClienteHome = () => {
   const [mechanics, setMechanics] = useState([]);
   const [requestForm, setRequestForm] = useState({ description: '', preferredMechanicId: '' });
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showProblemSelector, setShowProblemSelector] = useState(false);
+  const [selectedProblemData, setSelectedProblemData] = useState(null);
   const [carToCancel, setCarToCancel] = useState(null);
 
   const clientId = user?.client?.id;
@@ -28,18 +31,14 @@ const ClienteHome = () => {
   const load = async () => {
     if (!clientId) return;
     try {
-      const isAuthorizedForMechanics = user?.role?.name === 'admin' ||
-        user?.role?.name === 'jefe' ||
-        user?.role?.name === 'recepcionista';
-
       const [carsRes, mechsRes] = await Promise.all([
         carsService.getByClient(clientId),
-        isAuthorizedForMechanics ? usersService.getMechanics() : Promise.resolve({ data: { data: [] } })
+        usersService.getMechanics()
       ]);
 
       setCars(carsRes.data.data || []);
 
-      if (isAuthorizedForMechanics && mechsRes?.data?.data) {
+      if (mechsRes?.data?.data) {
         setMechanics((mechsRes.data.data || []).map(m => ({ id: m.id, name: `${m.user.name} ${m.user.lastName}` })));
       } else {
         setMechanics([]);
@@ -127,11 +126,33 @@ const ClienteHome = () => {
   const openRequest = (carId) => {
     setRequestOpenId(carId);
     setRequestForm({ description: '', preferredMechanicId: '' });
+    setShowProblemSelector(true);
+    setSelectedProblemData(null);
   };
 
   const openCancelConfirm = (carId) => {
     setCarToCancel(carId);
     setShowCancelConfirm(true);
+  };
+
+  const handleProblemSelected = (problemData) => {
+    setSelectedProblemData(problemData);
+    setShowProblemSelector(false);
+
+    let description = `${problemData.category.name}: ${problemData.problem.name}`;
+    if (problemData.customDescription) {
+      description += ` - ${problemData.customDescription}`;
+    }
+
+    setRequestForm(prev => ({
+      ...prev,
+      description: description
+    }));
+  };
+
+  const handleCloseProblemSelector = () => {
+    setShowProblemSelector(false);
+    setSelectedProblemData(null);
   };
 
   const createRequest = async () => {
@@ -143,10 +164,6 @@ const ClienteHome = () => {
         description: requestForm.description,
         preferredMechanicId: requestForm.preferredMechanicId ? parseInt(requestForm.preferredMechanicId) : undefined
       });
-
-
-      const constants = getConstants();
-      await carStatesService.transition(requestOpenId, constants.CAR_STATUS.PENDIENTE);
 
       toast.success('Solicitud enviada');
       setRequestOpenId(null);
@@ -199,6 +216,21 @@ const ClienteHome = () => {
   const getStatusColor = (statusId) => {
     const status = config.carStatuses?.find(s => s.id === statusId);
     return status?.color || 'bg-gray-100 text-gray-800';
+  };
+
+  const handleDeleteCar = async (carId) => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este vehículo? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    try {
+      await carsService.delete(carId);
+      toast.success('Vehículo eliminado exitosamente');
+      load();
+    } catch (error) {
+      console.error('Error deleting car:', error);
+      toast.error(error.response?.data?.message || 'Error al eliminar el vehículo');
+    }
   };
 
   return (
@@ -427,7 +459,7 @@ const ClienteHome = () => {
                       </Button>
 
                       {/* Botón de solicitar mecánico - solo visible si está en estado "Entrada" */}
-                      {car.statusId === getConstants().CAR_STATUS.ENTRADA ? (
+                      {car.statusId === 1 ? (
                         <Button
                           onClick={() => openRequest(car.id)}
                           size="sm"
@@ -448,7 +480,7 @@ const ClienteHome = () => {
                       )}
 
                       {/* Botón de cancelar solicitud - solo visible si está en estado "Pendiente" */}
-                      {car.statusId === getConstants().CAR_STATUS.PENDIENTE && (
+                      {car.statusId === 2 && (
                         <Button
                           onClick={() => openCancelConfirm(car.id)}
                           variant="danger"
@@ -458,6 +490,16 @@ const ClienteHome = () => {
                           Cancelar Solicitud
                         </Button>
                       )}
+
+                      {/* Botón de eliminar vehículo - siempre visible */}
+                      <Button
+                        onClick={() => handleDeleteCar(car.id)}
+                        variant="danger"
+                        size="sm"
+                        leftIcon={<Trash2 className="h-4 w-4" />}
+                      >
+                        Eliminar
+                      </Button>
                     </div>
                   </div>
 
@@ -481,24 +523,22 @@ const ClienteHome = () => {
                           />
                         </div>
 
-                        {/* Only show mechanic selection if user has permission */}
-                        {(user?.role?.name === 'admin' || user?.role?.name === 'jefe' || user?.role?.name === 'recepcionista') && (
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Mecánico preferido (opcional)
-                            </label>
-                            <select
-                              value={requestForm.preferredMechanicId}
-                              onChange={e => setRequestForm({ ...requestForm, preferredMechanicId: e.target.value })}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                            >
-                              <option value="">Sin preferencia</option>
-                              {mechanics.map(m => (
-                                <option key={m.id} value={m.id}>{m.name}</option>
-                              ))}
-                            </select>
-                          </div>
-                        )}
+                        {/* Mechanic selection is now available for all users including clients */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Mecánico preferido (opcional)
+                          </label>
+                          <select
+                            value={requestForm.preferredMechanicId}
+                            onChange={e => setRequestForm({ ...requestForm, preferredMechanicId: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                          >
+                            <option value="">Sin preferencia</option>
+                            {mechanics.map(m => (
+                              <option key={m.id} value={m.id}>{m.name}</option>
+                            ))}
+                          </select>
+                        </div>
 
                         <div className="flex justify-end space-x-3">
                           <Button
@@ -566,6 +606,26 @@ const ClienteHome = () => {
             Sí, cancelar solicitud
           </Button>
         </ModalFooter>
+      </Modal>
+
+      {/* Modal del selector de problemas */}
+      <Modal
+        isOpen={showProblemSelector}
+        onClose={handleCloseProblemSelector}
+        size="xl"
+        scrollBehavior="inside"
+      >
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>Selecciona el problema de tu vehículo</ModalTitle>
+          </ModalHeader>
+          <ModalContent>
+            <ProblemSelector
+              onProblemSelected={handleProblemSelected}
+              onClose={handleCloseProblemSelector}
+            />
+          </ModalContent>
+        </ModalContent>
       </Modal>
     </div>
   );

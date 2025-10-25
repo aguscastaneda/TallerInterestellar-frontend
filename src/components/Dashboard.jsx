@@ -55,6 +55,14 @@ const Dashboard = () => {
   };
 
   const getStatusColor = (status) => {
+
+    if (typeof status === 'number') {
+      const statusConfig = config.carStatuses?.find(s => s.id === status);
+      if (statusConfig) {
+        return statusConfig.color;
+      }
+    }
+
     const colors = {
       'En Espera': 'bg-yellow-100 text-yellow-800',
       'En Reparación': 'bg-blue-100 text-blue-800',
@@ -425,8 +433,8 @@ const Dashboard = () => {
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
                   className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium ${activeTab === item.id
-                      ? 'bg-indigo-100 text-indigo-900'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    ? 'bg-indigo-100 text-indigo-900'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                     }`}
                 >
                   <span className="mr-3">{item.icon}</span>
@@ -457,8 +465,8 @@ const Dashboard = () => {
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
                   className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium ${activeTab === item.id
-                      ? 'bg-indigo-100 text-indigo-900'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    ? 'bg-indigo-100 text-indigo-900'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                     }`}
                 >
                   <span className="mr-3">{item.icon}</span>

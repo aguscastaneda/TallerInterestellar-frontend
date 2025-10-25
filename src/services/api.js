@@ -80,6 +80,7 @@ export const carsService = {
   update: (id, data) => api.put(`/cars/${id}`, data),
   delete: (id) => api.delete(`/cars/${id}`),
   getByStatus: (statusId) => api.get(`/cars/status/${statusId}`),
+  updateStatus: (id, statusId) => api.put(`/cars/${id}`, { statusId }),
 };
 
 export const repairsService = {
@@ -93,6 +94,8 @@ export const repairsService = {
   getGroupedByCar: (params = {}) => api.get('/repairs/grouped/by-car', { params }),
   getAllRepairs: (params = {}) => api.get('/repairs/all-repairs', { params }),
   getAllItems: (params = {}) => api.get('/repairs/all-items', { params }),
+  getAllCars: (params = {}) => api.get('/repairs/all-cars', { params }),
+  getAllRepairsOnly: (params = {}) => api.get('/repairs/all-repairs', { params }),
 };
 
 export const paymentsService = {
@@ -105,6 +108,8 @@ export const paymentsService = {
   getByClient: (clientId) => api.get(`/payments/client/${clientId}`),
   getByStatus: (status) => api.get(`/payments/status/${status}`),
   createMercadoPagoPreference: (repairId, clientId) => api.post('/payments/create-preference', { repairId, clientId }),
+  cancelPendingPayment: (paymentId) => api.post(`/payments/cancel-pending/${paymentId}`),
+  getPendingPayment: (repairId) => api.get(`/payments/pending/${repairId}`),
 };
 
 export const requestsService = {

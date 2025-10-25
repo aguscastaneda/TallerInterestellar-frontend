@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { toast } from "react-hot-toast";
 import NavBar from "../NavBar";
 import { useConfig } from "../../contexts/ConfigContext";
-import { repairsService } from "../../services/api";
+import { repairsService, carsService } from "../../services/api";
 import {
   Button,
   Card,
@@ -28,7 +28,7 @@ import {
 import PropTypes from "prop-types";
 
 const AdminHistorial = () => {
-  const { config } = useConfig();
+  const { config, getStatusColor, getStatusName } = useConfig();
   const [items, setItems] = useState([]);
   const [allItems, setAllItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -36,19 +36,9 @@ const AdminHistorial = () => {
   const [showItemDetails, setShowItemDetails] = useState(null);
   const [showModifyStatus, setShowModifyStatus] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState("cars");
 
-  const defaultStatuses = [
-    { id: 1, name: "Entrada" },
-    { id: 2, name: "Pendiente" },
-    { id: 3, name: "En revisión" },
-    { id: 4, name: "Rechazado" },
-    { id: 5, name: "En reparación" },
-    { id: 6, name: "Finalizado" },
-    { id: 7, name: "Entregado" },
-    { id: 8, name: "Cancelado" },
-  ];
-
-  const carStatuses = config?.carStatuses || defaultStatuses;
+  const carStatuses = config?.carStatuses || [];
 
   const loadAllItems = async (search = "") => {
     try {
@@ -59,7 +49,13 @@ const AdminHistorial = () => {
         params.search = search.trim();
       }
 
-      const response = await repairsService.getAllItems(params);
+      let response;
+      if (activeTab === "cars") {
+        response = await repairsService.getAllCars(params);
+      } else {
+        response = await repairsService.getAllRepairsOnly(params);
+      }
+
       if (response.data?.success && response.data?.data) {
         setAllItems(response.data.data);
       } else {
@@ -114,23 +110,17 @@ const AdminHistorial = () => {
   }, []);
 
   useEffect(() => {
-    setItems(applyFilters(allItems, selectedStatus, searchQuery));
+    loadAllItems(searchQuery);
+  }, [activeTab]);
+
+  useEffect(() => {
+    const filteredItems = applyFilters(allItems, selectedStatus, searchQuery);
+    setItems(filteredItems);
   }, [allItems, selectedStatus, searchQuery]);
 
   const getRepairStatusColor = (statusId) => {
-    const colors = {
-      1: "bg-gray-100 text-gray-800 border border-gray-200", // Entrada
-      2: "bg-yellow-100 text-yellow-800 border border-yellow-200", // Pendiente
-      3: "bg-blue-100 text-blue-800 border border-blue-200", // En revision
-      4: "bg-red-100 text-red-800 border border-red-200", // Rechazado
-      5: "bg-purple-100 text-purple-800 border border-purple-200", // En reparacion
-      6: "bg-green-100 text-green-800 border border-green-200", // Finalizado
-      7: "bg-indigo-100 text-indigo-800 border border-indigo-200", // Entregado
-      8: "bg-orange-100 text-orange-800 border border-orange-200", // Cancelado
-    };
-    return (
-      colors[statusId] || "bg-gray-100 text-gray-800 border border-gray-200"
-    );
+
+    return getStatusColor(statusId);
   };
 
   const getStatusCount = (statusId) => {
@@ -139,16 +129,17 @@ const AdminHistorial = () => {
     }
 
     const statusIdInt = parseInt(statusId);
+    if (isNaN(statusIdInt)) {
+      return 0;
+    }
+
     const repairCount = allItems.filter(
       (item) => item.type === "repair" && item.statusId === statusIdInt
     ).length;
 
-    let carWithoutRepairsCount = 0;
-    if (statusIdInt === 1) {
-      carWithoutRepairsCount = allItems.filter(
-        (item) => item.type === "car" && item.statusId === statusIdInt
-      ).length;
-    }
+    const carWithoutRepairsCount = allItems.filter(
+      (item) => item.type === "car" && item.statusId === statusIdInt
+    ).length;
 
     return repairCount + carWithoutRepairsCount;
   };
@@ -194,7 +185,31 @@ const AdminHistorial = () => {
         <NavBar roleBadge={true} showHistory={false} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Cargando historial...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!loading && carStatuses.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <NavBar roleBadge={true} showHistory={false} />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Error de configuración
+              </h3>
+              <p className="text-gray-600">
+                No se pudieron cargar los estados del sistema. Contacte al administrador.
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -218,11 +233,43 @@ const AdminHistorial = () => {
             </Button>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Historial Completo de Autos y Reparaciones
+            Historial Completo
           </h1>
           <p className="text-gray-600">
-            Todos los autos y reparaciones del sistema
+            Gestión de autos y reparaciones del sistema
           </p>
+        </div>
+
+        {/* Tabs */}
+        <div className="mb-8">
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8">
+              <button
+                onClick={() => setActiveTab("cars")}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === "cars"
+                    ? "border-red-500 text-red-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  }`}
+              >
+                <div className="flex items-center space-x-2">
+                  <Car className="h-4 w-4" />
+                  <span>Autos ({getStatusCount("all")})</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab("repairs")}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === "repairs"
+                    ? "border-red-500 text-red-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  }`}
+              >
+                <div className="flex items-center space-x-2">
+                  <Wrench className="h-4 w-4" />
+                  <span>Reparaciones ({getStatusCount("all")})</span>
+                </div>
+              </button>
+            </nav>
+          </div>
         </div>
 
         {/* Search Bar */}
@@ -280,10 +327,9 @@ const AdminHistorial = () => {
                   {searchQuery
                     ? `No se encontraron autos o reparaciones que coincidan con "${searchQuery}"`
                     : selectedStatus === "all"
-                    ? "No hay autos ni reparaciones registrados en el sistema"
-                    : `No hay elementos en estado ${
-                        carStatuses?.find((s) => s.id === selectedStatus)
-                          ?.name || "seleccionado"
+                      ? "No hay autos ni reparaciones registrados en el sistema"
+                      : `No hay elementos en estado ${carStatuses?.find((s) => s.id === selectedStatus)
+                        ?.name || "seleccionado"
                       }`}
                 </p>
               </CardContent>
@@ -316,11 +362,6 @@ const AdminHistorial = () => {
                             {carStatuses?.find((s) => s.id === item.statusId)
                               ?.name || "Desconocido"}
                           </Badge>
-                          {item.type === "car" && (
-                            <Badge className="bg-pink-100 text-pink-800 border border-pink-200">
-                              Sin Reparaciones
-                            </Badge>
-                          )}
                         </div>
                         <p className="text-sm text-gray-600 mb-2 flex items-center flex-wrap gap-1">
                           <Car className="inline h-4 w-4 mr-1 flex-shrink-0" />
@@ -339,7 +380,7 @@ const AdminHistorial = () => {
                               item.client?.user?.lastName}
                           </span>
                         </p>
-                        {item.mechanic && (
+                        {activeTab === "repairs" && item.mechanic && (
                           <p className="text-sm text-gray-600 mb-2 flex items-center flex-wrap gap-1">
                             <Wrench className="inline h-4 w-4 mr-1 flex-shrink-0" />
                             <span className="truncate">
@@ -349,12 +390,14 @@ const AdminHistorial = () => {
                           </p>
                         )}
                         <div className="flex flex-wrap items-center gap-4 mt-2">
-                          <span className="text-sm text-gray-500 flex items-center">
-                            <DollarSign className="h-4 w-4 mr-1 flex-shrink-0" />
-                            <span>
-                              ${parseFloat(item.cost || 0).toLocaleString()}
+                          {activeTab === "repairs" && (
+                            <span className="text-sm text-gray-500 flex items-center">
+                              <DollarSign className="h-4 w-4 mr-1 flex-shrink-0" />
+                              <span>
+                                ${parseFloat(item.cost || 0).toLocaleString()}
+                              </span>
                             </span>
-                          </span>
+                          )}
                           <span className="text-sm text-gray-500 flex items-center">
                             <Calendar className="h-4 w-4 mr-1 flex-shrink-0" />
                             <span>
@@ -379,7 +422,7 @@ const AdminHistorial = () => {
                       >
                         Ver Detalles
                       </Button>
-                      {item.type === "repair" && selectedStatus === "all" && (
+                      {selectedStatus === "all" && (
                         <Button
                           onClick={() => handleModifyStatus(item)}
                           variant="primary"
@@ -439,7 +482,7 @@ const AdminHistorial = () => {
                       <Badge
                         className={`mt-1 ${getRepairStatusColor(
                           showItemDetails.car?.statusId ||
-                            showItemDetails.statusId
+                          showItemDetails.statusId
                         )}`}
                       >
                         {carStatuses?.find(
@@ -489,14 +532,14 @@ const AdminHistorial = () => {
                     </div>
                     {(showItemDetails.car?.client?.user?.phone ||
                       showItemDetails.client?.user?.phone) && (
-                      <div className="break-words">
-                        <span className="text-gray-600">Teléfono:</span>
-                        <p className="font-medium">
-                          {showItemDetails.car?.client?.user?.phone ||
-                            showItemDetails.client?.user?.phone}
-                        </p>
-                      </div>
-                    )}
+                        <div className="break-words">
+                          <span className="text-gray-600">Teléfono:</span>
+                          <p className="font-medium">
+                            {showItemDetails.car?.client?.user?.phone ||
+                              showItemDetails.client?.user?.phone}
+                          </p>
+                        </div>
+                      )}
                   </div>
                 </div>
 
@@ -529,11 +572,10 @@ const AdminHistorial = () => {
 
                 {/* detalles */}
                 <div
-                  className={`p-4 rounded-lg ${
-                    showItemDetails.type === "car"
-                      ? "bg-orange-50"
-                      : "bg-yellow-50"
-                  }`}
+                  className={`p-4 rounded-lg ${showItemDetails.type === "car"
+                    ? "bg-orange-50"
+                    : "bg-yellow-50"
+                    }`}
                 >
                   <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
                     <DollarSign className="h-5 w-5 mr-2" />
@@ -592,7 +634,7 @@ const AdminHistorial = () => {
         )}
 
         {/* Modificar estado modal */}
-        {showModifyStatus && showModifyStatus.type === "repair" && (
+        {showModifyStatus && (
           <ModifyStatusModal
             item={showModifyStatus}
             onClose={() => setShowModifyStatus(null)}
@@ -618,15 +660,37 @@ const ModifyStatusModal = ({ item, onClose, carStatuses, onStatusChange }) => {
 
     setLoading(true);
     try {
-      await repairsService.update(item.id, {
-        statusId: parseInt(selectedStatus),
-      });
-      toast.success("Estado de la reparación actualizado exitosamente");
+      let response;
+      if (item.type === "repair") {
+        response = await repairsService.update(item.id, {
+          statusId: parseInt(selectedStatus),
+        });
+        toast.success("Estado de la reparación actualizado exitosamente");
+      } else {
+        response = await carsService.updateStatus(item.id, parseInt(selectedStatus));
+        toast.success("Estado del auto actualizado exitosamente");
+      }
       onStatusChange();
       onClose();
     } catch (error) {
-      console.error("Error updating repair status:", error);
-      toast.error("Error al actualizar el estado de la reparación");
+      console.error("Error updating status:", error);
+      console.error("Error response:", error.response?.data);
+      console.error("Error status:", error.response?.status);
+
+      const itemType = item.type === "repair" ? "reparación" : "auto";
+
+      if (error.response?.status === 400) {
+        const errorMessage = error.response.data?.errors?.[0]?.msg || error.response.data?.message || "Datos inválidos";
+        toast.error(`Error de validación: ${errorMessage}`);
+      } else if (error.response?.status === 403) {
+        toast.error(`No tienes permisos para actualizar esta ${itemType}`);
+      } else if (error.response?.status === 404) {
+        toast.error(`${itemType.charAt(0).toUpperCase() + itemType.slice(1)} no encontrada`);
+      } else if (error.response?.status === 500) {
+        toast.error("Error interno del servidor. Intente nuevamente.");
+      } else {
+        toast.error(`Error al actualizar el estado del ${itemType}: ${error.response?.data?.message || error.message}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -635,16 +699,18 @@ const ModifyStatusModal = ({ item, onClose, carStatuses, onStatusChange }) => {
   return (
     <Modal isOpen={!!item} onClose={onClose} size="md">
       <ModalHeader>
-        <ModalTitle>Modificar Estado de la Reparación</ModalTitle>
+        <ModalTitle>
+          Modificar Estado del {item.type === "repair" ? "Reparación" : "Auto"}
+        </ModalTitle>
       </ModalHeader>
       <ModalContent>
         <div className="flex flex-col space-y-4">
           <div className="break-words">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Reparación
+              {item.type === "repair" ? "Reparación" : "Auto"}
             </label>
             <p className="text-lg font-semibold text-gray-900">
-              {item.car?.licensePlate} - {item.car?.brand} {item.car?.model}
+              {item.car?.licensePlate || item.licensePlate} - {item.car?.brand || item.brand} {item.car?.model || item.model}
             </p>
             <p className="text-sm text-gray-600 mt-1 break-words">
               {item.description}
@@ -698,7 +764,7 @@ const ModifyStatusModal = ({ item, onClose, carStatuses, onStatusChange }) => {
           Cancelar
         </Button>
         <Button onClick={handleSubmit} disabled={loading || !selectedStatus}>
-          {loading ? "Actualizando..." : "Actualizar Estado"}
+          {loading ? "Actualizando..." : `Actualizar Estado del ${item.type === "repair" ? "Reparación" : "Auto"}`}
         </Button>
       </ModalFooter>
     </Modal>
@@ -730,19 +796,8 @@ ModifyStatusModal.propTypes = {
 };
 
 const getRepairStatusColor = (carStatusId) => {
-  const colors = {
-    1: "bg-gray-100 text-gray-800 border border-gray-200", // Entrada
-    2: "bg-yellow-100 text-yellow-800 border border-yellow-200", // Pendiente
-    3: "bg-blue-100 text-blue-800 border border-blue-200", // En revision
-    4: "bg-red-100 text-red-800 border border-red-200", // Rechazado
-    5: "bg-purple-100 text-purple-800 border border-purple-200", // En reparacion
-    6: "bg-green-100 text-green-800 border border-green-200", // Finalizado
-    7: "bg-indigo-100 text-indigo-800 border border-indigo-200", // Entregado
-    8: "bg-orange-100 text-orange-800 border border-orange-200", // Cancelado
-  };
-  return (
-    colors[carStatusId] || "bg-gray-100 text-gray-800 border border-gray-200"
-  );
+
+  return "bg-gray-100 text-gray-800 border border-gray-200";
 };
 
 export default AdminHistorial;

@@ -21,7 +21,7 @@ import {
 
 const ClientRepairs = () => {
   const { user } = useAuth();
-  const { config, translateServiceRequestStatus } = useConfig();
+  const { config, translateServiceRequestStatus, getStatusColor, getStatusName } = useConfig();
   const [cars, setCars] = useState([]);
   const [allCars, setAllCars] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState("all");
@@ -42,6 +42,30 @@ const ClientRepairs = () => {
         "con costo:",
         repair.cost
       );
+
+      const pendingPaymentResponse = await paymentsService.getPendingPayment(repair.id);
+
+      if (pendingPaymentResponse.data.success && pendingPaymentResponse.data.data) {
+        const pendingPayment = pendingPaymentResponse.data.data;
+
+        if (!pendingPayment.canCancelNow) {
+          toast.error(
+            `Ya existe un pago pendiente para esta reparación. Puede crear un nuevo pago en ${pendingPayment.minutesLeft} minutos.`
+          );
+          return;
+        }
+
+        const shouldCancel = window.confirm(
+          `Ya existe un pago pendiente para esta reparación. ¿Desea cancelarlo y crear uno nuevo?`
+        );
+
+        if (shouldCancel) {
+          await paymentsService.cancelPendingPayment(pendingPayment.id);
+          toast.success("Pago pendiente cancelado. Creando nuevo pago...");
+        } else {
+          return;
+        }
+      }
 
       const response = await paymentsService.createMercadoPagoPreference(
         repair.id,
@@ -72,7 +96,24 @@ const ClientRepairs = () => {
           "El sistema de pagos no está configurado. Contacte al administrador."
         );
       } else if (error.response?.data?.message) {
-        toast.error(error.response.data.message);
+        if (error.response.data.message.includes("Ya existe un pago pendiente")) {
+          const existingPaymentData = error.response.data.data;
+          if (existingPaymentData) {
+            const canCancelAfter = new Date(existingPaymentData.canCancelAfter);
+            const now = new Date();
+
+            if (now >= canCancelAfter) {
+              toast.error("Ya existe un pago pendiente para esta reparación. El pago anterior será cancelado automáticamente. Intente nuevamente en unos momentos.");
+            } else {
+              const minutesLeft = Math.ceil((canCancelAfter - now) / (1000 * 60));
+              toast.error(`Ya existe un pago pendiente para esta reparación. Puede crear un nuevo pago en ${minutesLeft} minutos.`);
+            }
+          } else {
+            toast.error("Ya existe un pago pendiente para esta reparación. Por favor, complete o cancele el pago existente.");
+          }
+        } else {
+          toast.error(error.response.data.message);
+        }
       } else {
         toast.error("Error al procesar el pago. Intente nuevamente.");
       }
@@ -85,6 +126,7 @@ const ClientRepairs = () => {
     try {
       setLoading(true);
       const response = await clientRepairsService.getRepairs(clientId);
+      console.log("Datos de reparaciones cargados:", response.data.data);
       setAllCars(response.data.data.cars);
       setCars(response.data.data.cars);
     } catch (error) {
@@ -112,7 +154,17 @@ const ClientRepairs = () => {
       loadRepairs();
     }, 30000);
 
-    return () => clearInterval(interval);
+
+    const handleFocus = () => {
+      loadRepairs();
+    };
+
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, [clientId]);
 
   useEffect(() => {
@@ -161,24 +213,13 @@ const ClientRepairs = () => {
   };
 
   const getStatusVariant = (statusId) => {
-    const colors = {
-      1: "bg-gray-100 text-gray-800 border border-gray-200", // Entrada
-      2: "bg-yellow-100 text-yellow-800 border border-yellow-200", // Pendiente
-      3: "bg-blue-100 text-blue-800 border border-blue-200", // En revisión
-      4: "bg-red-100 text-red-800 border border-red-200", // Rechazado
-      5: "bg-purple-100 text-purple-800 border border-purple-200", // En reparación
-      6: "bg-green-100 text-green-800 border border-green-200", // Finalizado
-      7: "bg-indigo-100 text-indigo-800 border border-indigo-200", // Entregado
-      8: "bg-orange-100 text-orange-800 border border-orange-200", // Cancelado
-    };
-    return (
-      colors[statusId] || "bg-gray-100 text-gray-800 border border-gray-200"
-    );
+
+    return getStatusColor(statusId);
   };
 
   const getStatusLabel = (statusId) => {
-    const status = config.carStatuses?.find((s) => s.id === statusId);
-    return status?.name || "Sin estado";
+
+    return getStatusName(statusId);
   };
 
   const tabOptions = [
@@ -418,12 +459,12 @@ const ClientRepairs = () => {
                                       request.status === "PENDING"
                                         ? "warning"
                                         : request.status === "ASSIGNED"
-                                        ? "info"
-                                        : request.status === "IN_PROGRESS"
-                                        ? "info"
-                                        : request.status === "COMPLETED"
-                                        ? "success"
-                                        : "neutral"
+                                          ? "info"
+                                          : request.status === "IN_PROGRESS"
+                                            ? "info"
+                                            : request.status === "COMPLETED"
+                                              ? "success"
+                                              : "neutral"
                                     }
                                     size="sm"
                                   >
