@@ -76,7 +76,10 @@ const SegmentedControl = forwardRef(({
         <div className={clsx(
           'flex bg-white rounded-2xl border-2 border-gray-200 shadow-lg backdrop-blur-sm',
           sizeClasses[size]
-        )}>
+        )}
+        style={{ maxWidth: '100%' }}>
+          <div className="overflow-x-auto no-scrollbar w-full">
+            <div className="inline-flex w-max snap-x snap-mandatory gap-0">
           {topRowOptions.map((option, index) => {
             const isActive = value === option.value;
             const colors = getStatusColors(option, isActive);
@@ -98,8 +101,8 @@ const SegmentedControl = forwardRef(({
                     'rounded-l-2xl': isFirst,
                     'rounded-r-2xl': isLast,
                   },
-                  'hover:scale-[1.02] active:scale-[0.98]',
-                  'min-w-[140px] sm:min-w-[160px] md:min-w-[180px]'
+                  'hover:scale-[1.02] active:scale-[0.98] snap-center',
+                  'min-w-[112px] sm:min-w-[140px] md:min-w-[160px]'
                 )}
               >
                 {isActive && (
@@ -143,6 +146,8 @@ const SegmentedControl = forwardRef(({
               </button>
             );
           })}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -152,7 +157,10 @@ const SegmentedControl = forwardRef(({
           <div className={clsx(
             'flex bg-white rounded-2xl border-2 border-gray-200 shadow-lg backdrop-blur-sm',
             sizeClasses[size]
-          )}>
+          )}
+          style={{ maxWidth: '100%' }}>
+            <div className="overflow-x-auto no-scrollbar w-full">
+              <div className="inline-flex w-max snap-x snap-mandatory gap-0">
             {bottomRowOptions.map((option, index) => {
               const isActive = value === option.value;
               const colors = getStatusColors(option, isActive);
@@ -174,8 +182,8 @@ const SegmentedControl = forwardRef(({
                       'rounded-l-2xl': isFirst,
                       'rounded-r-2xl': isLast,
                     },
-                    'hover:scale-[1.02] active:scale-[0.98]',
-                    'min-w-[140px] sm:min-w-[160px] md:min-w-[180px]'
+                    'hover:scale-[1.02] active:scale-[0.98] snap-center',
+                    'min-w-[112px] sm:min-w-[140px] md:min-w-[160px]'
                   )}
                 >
                   {/* Indicador de estado activo con gradiente elegante */}
@@ -220,6 +228,8 @@ const SegmentedControl = forwardRef(({
                 </button>
               );
             })}
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -280,23 +280,23 @@ const AdminHome = () => {
         </div>
 
         <Card className="mb-8">
-          <CardContent className="p-8">
+          <CardContent className="p-6 md:p-8">
             <div className="flex items-center justify-center">
               <div className="w-full max-w-xl">
                 <h2 className="text-center text-2xl font-semibold text-gray-900 mb-6">
                   Buscar Vehículo
                 </h2>
-                <div className="flex">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <input
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Ingresa la patente del vehículo"
-                    className="flex-1 px-4 py-2 h-11 rounded-l-lg border border-gray-400 focus:outline-none focus:ring-2 focus:ring-red-600 text-black"
+                    className="flex-1 px-4 py-2 h-11 rounded-lg sm:rounded-l-lg sm:rounded-r-none border border-gray-400 focus:outline-none focus:ring-2 focus:ring-red-600 text-black"
                   />
                   <button
                     onClick={doSearch}
-                    className="px-6 h-11 bg-red-600 text-white font-medium rounded-r-lg hover:bg-red-700 transition"
+                    className="px-6 h-11 bg-red-600 text-white font-medium rounded-lg sm:rounded-r-lg sm:rounded-l-none hover:bg-red-700 transition"
                   >
                     Buscar
                   </button>

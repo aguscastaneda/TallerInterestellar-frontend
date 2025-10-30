@@ -19,6 +19,7 @@ import AdminHelp from './components/home/AdminHelp';
 import MechanicHelp from './components/home/MechanicHelp';
 import ReceptionistHelp from './components/home/ReceptionistHelp';
 import AdminHistorial from './components/home/AdminHistorial';
+import AdminCharts from './components/home/AdminCharts';
 import ClientRepairs from './components/home/ClientRepairs';
 import MechanicRepairs from './components/home/MechanicRepairs';
 import UserConfiguration from './components/UserConfiguration';
@@ -237,6 +238,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={['admin']}>
             <AdminHome />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/home/admin/chart"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <AdminCharts />
           </ProtectedRoute>
         }
       />

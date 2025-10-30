@@ -143,4 +143,14 @@ export const configService = {
   getCarStatuses: () => api.get('/config/car-statuses'),
 };
 
+export const analyticsService = {
+  getRepairsLastWeek: () => api.get('/analytics/mechanic/repairs-last-week'),
+  getCarsByStatus: () => api.get('/analytics/cars/by-status'),
+  getCarsAssignedByMechanic: () => api.get('/analytics/mechanics/cars-assigned'),
+  getBossWorkloadByMechanic: () => api.get('/analytics/boss/workload-by-mechanic'),
+  getClientsRegisteredLastMonth: () => api.get('/analytics/clients/registered-last-month'),
+  getCarsIngresadosPorSemana: () => api.get('/analytics/cars/ingresados-por-semana'),
+  getRejectionRateWeekly: () => api.get('/analytics/requests/rejection-rate-weekly'),
+};
+
 export default api;

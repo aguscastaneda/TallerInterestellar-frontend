@@ -12,7 +12,7 @@ const Register = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const { registerUser } = useAuth();
+  const { register: registerUser } = useAuth();
   const { config } = useConfig();
   const navigate = useNavigate();
 

@@ -15,6 +15,7 @@ import {
   ClipboardList,
   Settings
 } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
 
 const NavBar = ({ roleBadge, showHistory = false, onHistoryClick }) => {
   const { user, logout, roleKey } = useAuth();
@@ -109,7 +110,6 @@ const NavBar = ({ roleBadge, showHistory = false, onHistoryClick }) => {
                 } else if (roleKey === 'recepcionista') {
                   navigate('/home/recepcionista/help');
                 } else {
-                  // Navegar a ayuda general
                 }
               }}
               leftIcon={<HelpCircle className="h-4 w-4" />}
@@ -172,6 +172,19 @@ const NavBar = ({ roleBadge, showHistory = false, onHistoryClick }) => {
                       <button
                         onClick={() => {
                           setIsProfileOpen(false);
+                          navigate('/home/admin/chart');
+                        }}
+                        className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+                      >
+                        <BarChart3 className="h-4 w-4 mr-3" />
+                        Charts
+                      </button>
+                    )}
+
+                    {roleKey === 'admin' && (
+                      <button
+                        onClick={() => {
+                          setIsProfileOpen(false);
                           navigate('/home/admin/historial');
                         }}
                         className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
@@ -217,6 +230,18 @@ const NavBar = ({ roleBadge, showHistory = false, onHistoryClick }) => {
         {isMenuOpen && (
           <div className="md:hidden border-t border-gray-200 py-4 animate-slide-down">
             <div className="space-y-2">
+              {roleKey === 'admin' && (
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    navigate('/home/admin/chart');
+                  }}
+                  className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors duration-150"
+                >
+                  <BarChart3 className="h-4 w-4 mr-3" />
+                  Charts
+                </button>
+              )}
               <button
                 onClick={() => {
                   setIsMenuOpen(false);
@@ -231,7 +256,6 @@ const NavBar = ({ roleBadge, showHistory = false, onHistoryClick }) => {
                   } else if (roleKey === 'recepcionista') {
                     navigate('/home/recepcionista/help');
                   } else {
-                    // Navegar a ayuda general
                   }
                 }}
                 className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors duration-150"
