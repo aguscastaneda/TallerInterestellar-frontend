@@ -1,8 +1,20 @@
 import axios from 'axios';
 
 
+const buildBaseURL = () => {
+  const envBase = import.meta.env.VITE_API_URL;
+  if (envBase && typeof envBase === 'string') {
+    const trimmed = envBase.replace(/\/$/, '');
+    return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+  }
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return `${window.location.origin}/api`;
+  }
+  return '/api';
+};
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL + '/api',
+  baseURL: buildBaseURL(),
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
