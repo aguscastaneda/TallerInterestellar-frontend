@@ -445,7 +445,7 @@ const JefeHome = () => {
                         <CardContent className="p-6">
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
-                              <div className="flex items-center space-x-4 mb-4">
+                          <div className="flex items-center space-x-4 mb-4">
                                 <div className="flex-shrink-0">
                                   <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
                                     <Clock className="h-6 w-6 text-yellow-600" />
@@ -701,7 +701,7 @@ const JefeHome = () => {
                               </div>
                             )}
 
-                            <div className="flex items-center space-x-4">
+                            <div className="flex flex-wrap items-center gap-3">
                               <Badge variant={getStatusVariant(r.status)}>
                                 {translateServiceRequestStatus(r.status)}
                               </Badge>

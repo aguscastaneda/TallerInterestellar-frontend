@@ -47,7 +47,7 @@ const CardHeader = forwardRef(({
   return (
     <div
       ref={ref}
-      className={clsx('px-6 py-4 border-b border-gray-100', className)}
+      className={clsx('px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-100', className)}
       {...props}
     >
       {children}
@@ -101,7 +101,7 @@ const CardContent = forwardRef(({
   return (
     <div
       ref={ref}
-      className={clsx('px-6 py-4', className)}
+      className={clsx('px-4 py-3 sm:px-6 sm:py-4', className)}
       {...props}
     >
       {children}
@@ -119,7 +119,7 @@ const CardFooter = forwardRef(({
   return (
     <div
       ref={ref}
-      className={clsx('px-6 py-4 border-t border-gray-100 bg-gray-50', className)}
+      className={clsx('px-4 py-3 sm:px-6 sm:py-4 border-t border-gray-100 bg-gray-50', className)}
       {...props}
     >
       {children}

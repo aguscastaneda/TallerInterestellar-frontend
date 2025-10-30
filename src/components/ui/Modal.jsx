@@ -32,11 +32,11 @@ const Modal = forwardRef(({
   if (!isOpen) return null;
 
   const sizeClasses = {
-    sm: 'max-w-sm',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
-    full: 'max-w-full mx-4',
+    sm: 'max-w-sm w-full',
+    md: 'max-w-lg w-full',
+    lg: 'max-w-2xl w-full',
+    xl: 'max-w-4xl w-full',
+    full: 'max-w-full w-full mx-0 sm:mx-4',
   };
 
   return (

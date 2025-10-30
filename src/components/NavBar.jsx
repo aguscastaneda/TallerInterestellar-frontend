@@ -210,8 +210,8 @@ const NavBar = ({ roleBadge, showHistory = false, onHistoryClick }) => {
             </div>
           </div>
 
-          {/* Botón de menú móvil */}
-          <div className="md:hidden">
+          {/* Botón hamburguesa móvil */}
+          <div className="md:hidden flex items-center">
             <Button
               variant="ghost"
               size="sm"
@@ -230,18 +230,13 @@ const NavBar = ({ roleBadge, showHistory = false, onHistoryClick }) => {
         {isMenuOpen && (
           <div className="md:hidden border-t border-gray-200 py-4 animate-slide-down">
             <div className="space-y-2">
-              {roleKey === 'admin' && (
-                <button
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    navigate('/home/admin/chart');
-                  }}
-                  className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors duration-150"
-                >
-                  <BarChart3 className="h-4 w-4 mr-3" />
-                  Charts
-                </button>
-              )}
+              {/* Encabezado con usuario y email */}
+              <div className="px-4 py-3 border-b border-gray-100">
+                <p className="text-sm font-medium text-gray-900">{user?.name || 'Admin'}</p>
+                <p className="text-xs text-gray-500">{user?.email || 'admin@taller.com'}</p>
+              </div>
+
+              {/* Ayuda (todas los roles) */}
               <button
                 onClick={() => {
                   setIsMenuOpen(false);
@@ -264,6 +259,32 @@ const NavBar = ({ roleBadge, showHistory = false, onHistoryClick }) => {
                 Ayuda
               </button>
 
+              {/* Opciones admin */}
+              {roleKey === 'admin' && (
+                <>
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      navigate('/home/admin/chart');
+                    }}
+                    className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors duration-150"
+                  >
+                    <BarChart3 className="h-4 w-4 mr-3" />
+                    Charts
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      navigate('/home/admin/historial');
+                    }}
+                    className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors duration-150"
+                  >
+                    <History className="h-4 w-4 mr-3" />
+                    Historial
+                  </button>
+                </>
+              )}
+
               {roleKey === 'cliente' && (
                 <button
                   onClick={() => {
@@ -274,19 +295,6 @@ const NavBar = ({ roleBadge, showHistory = false, onHistoryClick }) => {
                 >
                   <Settings className="h-4 w-4 mr-3" />
                   Configuración
-                </button>
-              )}
-
-              {showHistory && (
-                <button
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    onHistoryClick?.();
-                  }}
-                  className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors duration-150"
-                >
-                  <History className="h-4 w-4 mr-3" />
-                  Historial
                 </button>
               )}
 

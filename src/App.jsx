@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ConfigProvider } from './contexts/ConfigContext';
@@ -103,6 +104,14 @@ const NavigateSetter = () => {
 
   setNavigateFunction(navigate);
 
+  return null;
+};
+
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+  }, [pathname]);
   return null;
 };
 
@@ -293,6 +302,7 @@ const App = () => {
       <AuthProvider>
         <Router>
           <NavigateSetter />
+          <ScrollToTop />
           <AppRoutes />
           <Toaster
             position="top-right"

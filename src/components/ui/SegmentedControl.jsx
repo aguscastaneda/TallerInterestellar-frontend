@@ -10,14 +10,14 @@ const SegmentedControl = forwardRef(({
   ...props
 }, ref) => {
   const sizeClasses = {
-    sm: 'h-8 text-xs',
-    md: 'h-10 text-sm',
-    lg: 'h-12 text-base',
+    sm: 'text-xs',
+    md: 'text-sm',
+    lg: 'text-base',
   };
 
   const buttonSizeClasses = {
-    sm: 'px-2 py-1',
-    md: 'px-3 py-2',
+    sm: 'px-3 py-2',
+    md: 'px-4 py-2.5',
     lg: 'px-4 py-3',
   };
 
@@ -67,19 +67,18 @@ const SegmentedControl = forwardRef(({
     <div
       ref={ref}
       className={clsx(
-        'w-full max-w-6xl mx-auto space-y-3',
+        'w-full max-w-screen-lg mx-auto space-y-3',
         className
       )}
       {...props}
     >
       <div className="flex justify-center">
         <div className={clsx(
-          'flex bg-white rounded-2xl border-2 border-gray-200 shadow-lg backdrop-blur-sm',
+          'w-full bg-white rounded-2xl border-2 border-gray-200 shadow-lg backdrop-blur-sm p-1',
           sizeClasses[size]
-        )}
-        style={{ maxWidth: '100%' }}>
-          <div className="overflow-x-auto no-scrollbar w-full">
-            <div className="inline-flex w-max snap-x snap-mandatory gap-0">
+        )}>
+          <div className="w-full">
+            <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:gap-0">
           {topRowOptions.map((option, index) => {
             const isActive = value === option.value;
             const colors = getStatusColors(option, isActive);
@@ -91,25 +90,24 @@ const SegmentedControl = forwardRef(({
                 key={option.value}
                 onClick={() => onChange?.(option.value)}
                 className={clsx(
-                  'relative flex items-center justify-center font-semibold transition-all duration-500 ease-in-out border-r-2 border-gray-200 last:border-r-0 group min-w-0 whitespace-nowrap',
+                  'relative flex items-center justify-between font-semibold transition-all duration-500 ease-in-out group min-w-0 whitespace-nowrap w-full md:w-auto',
                   buttonSizeClasses[size],
                   {
                     [colors.active]: isActive,
                     [colors.inactive]: !isActive,
                   },
                   {
-                    'rounded-l-2xl': isFirst,
-                    'rounded-r-2xl': isLast,
+                    'rounded-2xl md:rounded-none md:rounded-l-2xl': isFirst,
+                    'md:rounded-r-2xl': isLast,
                   },
-                  'hover:scale-[1.02] active:scale-[0.98] snap-center',
-                  'min-w-[112px] sm:min-w-[140px] md:min-w-[160px]'
+                  'hover:scale-[1.01] active:scale-[0.99]'
                 )}
               >
                 {isActive && (
                   <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-white/10 to-transparent rounded-2xl pointer-events-none" />
                 )}
 
-                <div className="flex items-center space-x-2 relative z-10 min-w-0 flex-1 px-3">
+                <div className="flex items-center space-x-2 relative z-10 min-w-0 flex-1 px-1 md:px-3">
                   {option.icon && (
                     <span className={clsx(
                       'transition-all duration-500 ease-in-out flex-shrink-0',
@@ -134,12 +132,10 @@ const SegmentedControl = forwardRef(({
                   )}
                 </div>
 
-                {/* Efecto de hover elegante */}
                 {!isActive && (
                   <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 via-transparent to-gray-100/30 opacity-0 group-hover:opacity-100 transition-all duration-500 ease-in-out pointer-events-none rounded-2xl" />
                 )}
 
-                {/* Borde sutil para el estado activo */}
                 {isActive && (
                   <div className="absolute inset-0 ring-2 ring-white/50 rounded-2xl pointer-events-none" />
                 )}
@@ -155,12 +151,11 @@ const SegmentedControl = forwardRef(({
       {bottomRowOptions.length > 0 && (
         <div className="flex justify-center">
           <div className={clsx(
-            'flex bg-white rounded-2xl border-2 border-gray-200 shadow-lg backdrop-blur-sm',
+            'w-full bg-white rounded-2xl border-2 border-gray-200 shadow-lg backdrop-blur-sm p-1',
             sizeClasses[size]
-          )}
-          style={{ maxWidth: '100%' }}>
-            <div className="overflow-x-auto no-scrollbar w-full">
-              <div className="inline-flex w-max snap-x snap-mandatory gap-0">
+          )}>
+            <div className="w-full">
+              <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:gap-0">
             {bottomRowOptions.map((option, index) => {
               const isActive = value === option.value;
               const colors = getStatusColors(option, isActive);
@@ -172,26 +167,24 @@ const SegmentedControl = forwardRef(({
                   key={option.value}
                   onClick={() => onChange?.(option.value)}
                   className={clsx(
-                    'relative flex items-center justify-center font-semibold transition-all duration-500 ease-in-out border-r-2 border-gray-200 last:border-r-0 group min-w-0 whitespace-nowrap',
+                    'relative flex items-center justify-between font-semibold transition-all duration-500 ease-in-out group min-w-0 whitespace-nowrap w-full md:w-auto',
                     buttonSizeClasses[size],
                     {
                       [colors.active]: isActive,
                       [colors.inactive]: !isActive,
                     },
                     {
-                      'rounded-l-2xl': isFirst,
-                      'rounded-r-2xl': isLast,
+                      'rounded-2xl md:rounded-none md:rounded-l-2xl': isFirst,
+                      'md:rounded-r-2xl': isLast,
                     },
-                    'hover:scale-[1.02] active:scale-[0.98] snap-center',
-                    'min-w-[112px] sm:min-w-[140px] md:min-w-[160px]'
+                    'hover:scale-[1.01] active:scale-[0.99]'
                   )}
                 >
-                  {/* Indicador de estado activo con gradiente elegante */}
                   {isActive && (
                     <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-white/10 to-transparent rounded-2xl pointer-events-none" />
                   )}
 
-                  <div className="flex items-center space-x-2 relative z-10 min-w-0 flex-1 px-3">
+                  <div className="flex items-center space-x-2 relative z-10 min-w-0 flex-1 px-1 md:px-3">
                     {option.icon && (
                       <span className={clsx(
                         'transition-all duration-500 ease-in-out flex-shrink-0',
@@ -216,12 +209,10 @@ const SegmentedControl = forwardRef(({
                     )}
                   </div>
 
-                  {/* Efecto de hover elegante */}
                   {!isActive && (
                     <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 via-transparent to-gray-100/30 opacity-0 group-hover:opacity-100 transition-all duration-500 ease-in-out pointer-events-none rounded-2xl" />
                   )}
 
-                  {/* Borde sutil para el estado activo */}
                   {isActive && (
                     <div className="absolute inset-0 ring-2 ring-white/50 rounded-2xl pointer-events-none" />
                   )}

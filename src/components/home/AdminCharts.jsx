@@ -157,9 +157,9 @@ const AdminCharts = () => {
     return (
         <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
             <NavBar roleBadge />
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-                <div className="flex items-center justify-between">
-                    <div>
+            <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div className="min-w-0">
                         <h2 className="text-2xl font-bold text-gray-900">Panel de Charts</h2>
                         <p className="text-sm text-gray-500 mt-1">Visualiza métricas por rol del sistema</p>
                     </div>

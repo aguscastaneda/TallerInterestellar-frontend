@@ -10,7 +10,7 @@ const Table = forwardRef(({
     <div className="overflow-x-auto">
       <table
         ref={ref}
-        className={clsx('table-base', className)}
+        className={clsx('table-base min-w-full', className)}
         {...props}
       >
         {children}
