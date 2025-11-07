@@ -3,7 +3,8 @@ import { toast } from 'react-hot-toast';
 import NavBar from '../NavBar';
 import { useConfig } from '../../contexts/ConfigContext';
 import { carsService, carStatesService } from '../../services/api';
-import { Button, Card, CardContent, Badge, Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter, SegmentedControl, LoadingSpinner } from '../ui';
+import { fetchWithCache, clearCache } from '../../services/cache';
+import { Button, Card, CardContent, Badge, Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter, SegmentedControl } from '../ui';
 import { Car, Eye, CheckCircle, User, Mail, Phone, Calendar, MapPin } from 'lucide-react';
 
 const RecepcionistaHome = () => {
@@ -12,16 +13,18 @@ const RecepcionistaHome = () => {
   const [searchResult, setSearchResult] = useState(null);
   const [cars, setCars] = useState([]);
   const [allCars, setAllCars] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [showClientDetails, setShowClientDetails] = useState(null);
   const [showDeliveryModal, setShowDeliveryModal] = useState(null);
 
   const loadCars = async () => {
     try {
-      setLoading(true);
-      const response = await carsService.getAll();
-      if (response.data?.success && response.data?.data) {
+      const response = await fetchWithCache(
+        'recepcionista_cars',
+        async () => await carsService.getAll(),
+        {}
+      );
+      if (response?.data?.success && response?.data?.data) {
         setAllCars(response.data.data);
         setCars(response.data.data);
       } else {
@@ -33,18 +36,16 @@ const RecepcionistaHome = () => {
       toast.error('Error cargando autos');
       setAllCars([]);
       setCars([]);
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
     loadCars();
-    
+
     const handleRefresh = () => {
       loadCars();
     };
-    
+
     window.addEventListener('app-refresh', handleRefresh);
     return () => {
       window.removeEventListener('app-refresh', handleRefresh);
@@ -65,6 +66,7 @@ const RecepcionistaHome = () => {
   const handleDeliverCar = async (carId) => {
     try {
       await carStatesService.deliverCar(carId);
+      clearCache('recepcionista_cars', {});
       toast.success('Auto entregado exitosamente');
       setShowDeliveryModal(null);
       loadCars();
@@ -107,19 +109,6 @@ const RecepcionistaHome = () => {
       count: getStatusCount(status.id)
     })) || [])
   ];
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <NavBar roleBadge={true} showHistory={false} />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -224,9 +213,7 @@ const RecepcionistaHome = () => {
 
         {/* Lista de vehículos */}
         <div className="space-y-4">
-          {loading ? (
-            <LoadingSpinner text="Cargando vehículos..." />
-          ) : cars.length === 0 ? (
+          {cars.length === 0 ? (
             <Card className="text-center py-12">
               <CardContent>
                 <Car className="h-12 w-12 text-gray-400 mx-auto mb-4" />

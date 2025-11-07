@@ -4,6 +4,7 @@ import { toast } from "react-hot-toast";
 import { useAuth } from "../../contexts/AuthContext";
 import { useConfig } from "../../contexts/ConfigContext";
 import { usersService, requestsService, carsService } from "../../services/api";
+import { fetchWithCache, clearCache } from "../../services/cache";
 import {
   Button,
   Card,
@@ -16,7 +17,6 @@ import {
   ModalContent,
   ModalFooter,
   SegmentedControl,
-  LoadingSpinner,
 } from "../ui";
 import {
   Wrench,
@@ -48,7 +48,6 @@ const JefeHome = () => {
   const [searchResult, setSearchResult] = useState(null);
   const [requests, setRequests] = useState([]);
   const [mechanics, setMechanics] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedMechanic, setSelectedMechanic] = useState("all");
@@ -81,20 +80,27 @@ const JefeHome = () => {
 
   const load = async () => {
     if (!bossId) return;
-    setLoading(true);
     try {
       console.log("Cargando datos para bossId:", bossId);
       const [reqRes, mechsRes] = await Promise.all([
-        requestsService.getByBoss(bossId),
-        usersService.getMechanics(),
+        fetchWithCache(
+          'jefe_requests',
+          async () => await requestsService.getByBoss(bossId),
+          { bossId }
+        ),
+        fetchWithCache(
+          'jefe_mechanics',
+          async () => await usersService.getMechanics(),
+          {}
+        )
       ]);
-      console.log("Respuesta de mecánicos:", mechsRes.data);
+      console.log("Respuesta de mecánicos:", mechsRes?.data);
 
-      const filteredRequests = (reqRes.data.data || []).filter(
+      const filteredRequests = (reqRes?.data?.data || []).filter(
         (r) => r.status !== "CANCELLED"
       );
       setRequests(filteredRequests);
-      const filteredMechanics = (mechsRes.data.data || []).filter(
+      const filteredMechanics = (mechsRes?.data?.data || []).filter(
         (m) => m.bossId === bossId
       );
       console.log("Mecánicos filtrados para este jefe:", filteredMechanics);
@@ -102,8 +108,6 @@ const JefeHome = () => {
     } catch (error) {
       console.error("Error cargando datos:", error);
       toast.error(error.response?.data?.message || "Error cargando datos");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -117,9 +121,9 @@ const JefeHome = () => {
     const handleRefresh = () => {
       load();
     };
-    
+
     window.addEventListener('app-refresh', handleRefresh);
-    
+
     return () => {
       clearInterval(interval);
       window.removeEventListener('app-refresh', handleRefresh);
@@ -140,6 +144,7 @@ const JefeHome = () => {
   const assignMechanic = async (requestId, mechanicId) => {
     try {
       await requestsService.assignMechanic(requestId, mechanicId);
+      clearCache('jefe_requests', { bossId });
       toast.success("Asignado");
       load();
       window.dispatchEvent(new CustomEvent('app-refresh'));
@@ -164,7 +169,7 @@ const JefeHome = () => {
       };
 
       await usersService.create(mechanicData);
-
+      clearCache('jefe_mechanics', {});
       toast.success("Mecánico creado correctamente");
       setShowCreateMechanic(false);
       window.dispatchEvent(new CustomEvent('app-refresh'));
@@ -209,6 +214,7 @@ const JefeHome = () => {
         updateData.password = editForm.password;
       }
       await usersService.update(editingMechanic.user.id, updateData);
+      clearCache('jefe_mechanics', {});
       toast.success("Mecánico actualizado correctamente");
       setShowEditMechanic(false);
       setEditingMechanic(null);
@@ -225,6 +231,7 @@ const JefeHome = () => {
       console.log("Eliminando mecánico con userId:", userId);
       const response = await usersService.delete(userId);
       console.log("Respuesta del servidor:", response.data);
+      clearCache('jefe_mechanics', {});
       toast.success("Mecánico eliminado correctamente");
       window.dispatchEvent(new CustomEvent('app-refresh'));
       await load();
@@ -318,17 +325,6 @@ const JefeHome = () => {
       count: getStatusCount("COMPLETED"),
     },
   ];
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <NavBar roleBadge={true} showHistory={false} />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <LoadingSpinner text="Cargando datos..." size="lg" />
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -456,7 +452,7 @@ const JefeHome = () => {
                         <CardContent className="p-6">
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
-                          <div className="flex items-center space-x-4 mb-4">
+                              <div className="flex items-center space-x-4 mb-4">
                                 <div className="flex-shrink-0">
                                   <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
                                     <Clock className="h-6 w-6 text-yellow-600" />
@@ -628,12 +624,12 @@ const JefeHome = () => {
                                     <span className="text-gray-700">
                                       {r.updatedAt
                                         ? new Date(
-                                            r.updatedAt
-                                          ).toLocaleDateString("es-ES", {
-                                            year: "numeric",
-                                            month: "short",
-                                            day: "numeric",
-                                          })
+                                          r.updatedAt
+                                        ).toLocaleDateString("es-ES", {
+                                          year: "numeric",
+                                          month: "short",
+                                          day: "numeric",
+                                        })
                                         : "No disponible"}
                                     </span>
                                   </div>
@@ -645,11 +641,11 @@ const JefeHome = () => {
                                     <span className="text-gray-700">
                                       {r.updatedAt
                                         ? new Date(
-                                            r.updatedAt
-                                          ).toLocaleTimeString("es-ES", {
-                                            hour: "2-digit",
-                                            minute: "2-digit",
-                                          })
+                                          r.updatedAt
+                                        ).toLocaleTimeString("es-ES", {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })
                                         : "No disponible"}
                                     </span>
                                   </div>
@@ -661,12 +657,12 @@ const JefeHome = () => {
                                     <span className="text-gray-700">
                                       {r.repair.createdAt
                                         ? new Date(
-                                            r.repair.createdAt
-                                          ).toLocaleDateString("es-ES", {
-                                            year: "numeric",
-                                            month: "short",
-                                            day: "numeric",
-                                          })
+                                          r.repair.createdAt
+                                        ).toLocaleDateString("es-ES", {
+                                          year: "numeric",
+                                          month: "short",
+                                          day: "numeric",
+                                        })
                                         : "No disponible"}
                                     </span>
                                   </div>
@@ -678,11 +674,11 @@ const JefeHome = () => {
                                     <span className="text-gray-700">
                                       {r.repair.createdAt
                                         ? new Date(
-                                            r.repair.createdAt
-                                          ).toLocaleTimeString("es-ES", {
-                                            hour: "2-digit",
-                                            minute: "2-digit",
-                                          })
+                                          r.repair.createdAt
+                                        ).toLocaleTimeString("es-ES", {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })
                                         : "No disponible"}
                                     </span>
                                   </div>
@@ -788,13 +784,13 @@ const JefeHome = () => {
                                   Creado:{" "}
                                   {m.createdAt
                                     ? new Date(m.createdAt).toLocaleDateString(
-                                        "es-ES",
-                                        {
-                                          year: "numeric",
-                                          month: "long",
-                                          day: "numeric",
-                                        }
-                                      )
+                                      "es-ES",
+                                      {
+                                        year: "numeric",
+                                        month: "long",
+                                        day: "numeric",
+                                      }
+                                    )
                                     : "Fecha no disponible"}
                                 </span>
                               </p>
@@ -1104,12 +1100,12 @@ const JefeHome = () => {
                         <p className="text-gray-900 break-words">
                           {viewingMechanic.createdAt
                             ? new Date(
-                                viewingMechanic.createdAt
-                              ).toLocaleDateString("es-ES", {
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
-                              })
+                              viewingMechanic.createdAt
+                            ).toLocaleDateString("es-ES", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })
                             : "Fecha no disponible"}
                         </p>
                       </div>

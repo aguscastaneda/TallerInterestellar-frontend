@@ -4,6 +4,7 @@ import NavBar from "../NavBar";
 import { useAuth } from "../../contexts/AuthContext";
 import { useConfig } from "../../contexts/ConfigContext";
 import { carsService, usersService } from "../../services/api";
+import { fetchWithCache, clearCache } from "../../services/cache";
 import {
   Button,
   Card,
@@ -97,9 +98,13 @@ const AdminHome = () => {
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const res = await usersService.getAll();
+      const res = await fetchWithCache(
+        'admin_users',
+        async () => await usersService.getAll(),
+        {}
+      );
 
-      if (res.data?.success && res.data?.data) {
+      if (res?.data?.success && res?.data?.data) {
         setUsers(res.data.data);
       } else {
         setUsers([]);
@@ -117,8 +122,12 @@ const AdminHome = () => {
 
   const loadBosses = async () => {
     try {
-      const res = await usersService.getBosses();
-      if (res.data?.success && res.data?.data) {
+      const res = await fetchWithCache(
+        'admin_bosses',
+        async () => await usersService.getBosses(),
+        {}
+      );
+      if (res?.data?.success && res?.data?.data) {
         setBosses(res.data.data);
       } else {
         setBosses([]);
@@ -139,12 +148,12 @@ const AdminHome = () => {
   useEffect(() => {
     loadUsers();
     loadBosses();
-    
+
     const handleRefresh = () => {
       loadUsers();
       loadBosses();
     };
-    
+
     window.addEventListener('app-refresh', handleRefresh);
     return () => {
       window.removeEventListener('app-refresh', handleRefresh);
@@ -184,6 +193,8 @@ const AdminHome = () => {
       }
 
       await usersService.create(formData);
+      clearCache('admin_users');
+      clearCache('admin_bosses');
       toast.success("Usuario creado exitosamente");
       setShowCreateForm(false);
       window.dispatchEvent(new CustomEvent('app-refresh'));
@@ -210,6 +221,8 @@ const AdminHome = () => {
 
     try {
       await usersService.delete(userId);
+      clearCache('admin_users');
+      clearCache('admin_bosses');
       toast.success(`Usuario ${action}do correctamente`);
       loadUsers();
       window.dispatchEvent(new CustomEvent('app-refresh'));
@@ -246,6 +259,8 @@ const AdminHome = () => {
       }
 
       await usersService.update(editingUser.id, updateData);
+      clearCache('admin_users');
+      clearCache('admin_bosses');
       toast.success("Usuario actualizado correctamente");
       setShowEditForm(false);
       setEditingUser(null);
@@ -386,8 +401,8 @@ const AdminHome = () => {
             {activeTab === "clientes"
               ? "Cliente"
               : activeTab === "mecanicos"
-              ? "Mecánico"
-              : "Jefe de Mecánicos"}
+                ? "Mecánico"
+                : "Jefe de Mecánicos"}
           </Button>
         </div>
 
@@ -404,8 +419,8 @@ const AdminHome = () => {
                 {activeTab === ROLE_NAMES.CLIENT
                   ? "Cliente"
                   : activeTab === ROLE_NAMES.MECHANIC
-                  ? "Mecánico"
-                  : "Jefe de Mecánicos"}
+                    ? "Mecánico"
+                    : "Jefe de Mecánicos"}
               </ModalTitle>
             </ModalHeader>
             <ModalContent>
@@ -646,8 +661,8 @@ const AdminHome = () => {
                   {activeTab === "clientes"
                     ? "cliente"
                     : activeTab === "mecanicos"
-                    ? "mecánico"
-                    : "jefe de mecánicos"}{" "}
+                      ? "mecánico"
+                      : "jefe de mecánicos"}{" "}
                   para comenzar
                 </p>
               </CardContent>
@@ -662,16 +677,14 @@ const AdminHome = () => {
                     <div className="flex items-center space-x-4 min-w-0">
                       <div className="flex-shrink-0">
                         <div
-                          className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                            userItem.active ? "bg-green-100" : "bg-red-100"
-                          }`}
+                          className={`w-12 h-12 rounded-lg flex items-center justify-center ${userItem.active ? "bg-green-100" : "bg-red-100"
+                            }`}
                         >
                           <User
-                            className={`h-6 w-6 ${
-                              userItem.active
+                            className={`h-6 w-6 ${userItem.active
                                 ? "text-green-600"
                                 : "text-red-600"
-                            }`}
+                              }`}
                           />
                         </div>
                       </div>
@@ -745,16 +758,14 @@ const AdminHome = () => {
               <div className="space-y-6">
                 <div className="flex items-center space-x-4">
                   <div
-                    className={`w-16 h-16 rounded-lg flex items-center justify-center ${
-                      showUserDetails.active ? "bg-green-100" : "bg-red-100"
-                    }`}
+                    className={`w-16 h-16 rounded-lg flex items-center justify-center ${showUserDetails.active ? "bg-green-100" : "bg-red-100"
+                      }`}
                   >
                     <User
-                      className={`h-8 w-8 ${
-                        showUserDetails.active
+                      className={`h-8 w-8 ${showUserDetails.active
                           ? "text-green-600"
                           : "text-red-600"
-                      }`}
+                        }`}
                     />
                   </div>
                   <div>

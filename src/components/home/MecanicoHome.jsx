@@ -3,7 +3,8 @@ import NavBar from '../NavBar';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { carsService, requestsService } from '../../services/api';
-import { Button, Card, CardContent, Badge, Input, Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter, SegmentedControl, LoadingSpinner } from '../ui';
+import { fetchWithCache, clearCache } from '../../services/cache';
+import { Button, Card, CardContent, Badge, Input, Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter, SegmentedControl } from '../ui';
 import { Wrench, Clock, CheckCircle, Eye, Square, DollarSign, Car, Calendar, Clock3, CalendarCheck, Shield } from 'lucide-react';
 import PropTypes from 'prop-types';
 
@@ -16,21 +17,21 @@ const MecanicoHome = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [finishModalOpen, setFinishModalOpen] = useState(null);
   const [budgetModalOpen, setBudgetModalOpen] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   const mechanicId = user?.mechanic?.id;
 
   const load = async () => {
     if (!mechanicId) return;
     try {
-      setLoading(true);
-      const response = await requestsService.getByMechanic(mechanicId);
-      const filteredRequests = (response.data.data || []).filter(request => request.status !== 'CANCELLED');
+      const response = await fetchWithCache(
+        'mecanico_requests',
+        async () => await requestsService.getByMechanic(mechanicId),
+        { mechanicId }
+      );
+      const filteredRequests = (response?.data?.data || []).filter(request => request.status !== 'CANCELLED');
       setRequests(filteredRequests);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Error cargando solicitudes');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -67,6 +68,7 @@ const MecanicoHome = () => {
   const sendBudget = async (reqItem, budgetData) => {
     try {
       await requestsService.sendBudget(reqItem.id, budgetData);
+      clearCache('mecanico_requests', { mechanicId });
       toast.success('Presupuesto enviado al cliente');
       load();
       window.dispatchEvent(new CustomEvent('app-refresh'));
@@ -76,6 +78,7 @@ const MecanicoHome = () => {
   const finishWork = async (reqItem, payload) => {
     try {
       await requestsService.updateStatus(reqItem.id, { status: 'COMPLETED', description: payload.description, cost: payload.cost });
+      clearCache('mecanico_requests', { mechanicId });
       toast.success('Trabajo finalizado');
       load();
       window.dispatchEvent(new CustomEvent('app-refresh'));
@@ -198,9 +201,7 @@ const MecanicoHome = () => {
 
         {/* Lista de trabajos */}
         <div className="space-y-4">
-          {loading ? (
-            <LoadingSpinner text="Cargando trabajos..." />
-          ) : filteredRequests.length === 0 ? (
+          {filteredRequests.length === 0 ? (
             <Card className="text-center py-12">
               <CardContent>
                 <Wrench className="h-12 w-12 text-gray-400 mx-auto mb-4" />

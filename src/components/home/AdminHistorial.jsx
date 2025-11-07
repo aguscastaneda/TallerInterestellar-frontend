@@ -4,6 +4,7 @@ import NavBar from "../NavBar";
 import { useConfig } from "../../contexts/ConfigContext";
 import { useRefresh } from "../../contexts/RefreshContext";
 import { repairsService, carsService } from "../../services/api";
+import { fetchWithCache, clearCache } from "../../services/cache";
 import {
   Button,
   Card,
@@ -45,7 +46,7 @@ const AdminHistorial = () => {
 
   const carStatuses = config?.carStatuses || [];
 
-  const loadAllItems = async (search = "") => {
+  const loadAllItems = async (search = "", tab = null) => {
     try {
       setLoading(true);
 
@@ -54,32 +55,117 @@ const AdminHistorial = () => {
         params.search = search.trim();
       }
 
+      const targetTab = tab || activeTab;
+
       let response;
-      if (activeTab === "cars") {
-        response = await repairsService.getAllCars(params);
+      if (targetTab === "cars") {
+        response = await fetchWithCache(
+          'admin_historial_cars',
+          async () => await repairsService.getAllCars(params),
+          { search: params.search || '' }
+        );
       } else {
-        response = await repairsService.getAllRepairsOnly(params);
+        response = await fetchWithCache(
+          'admin_historial_repairs',
+          async () => await repairsService.getAllRepairsOnly(params),
+          { search: params.search || '' }
+        );
       }
 
-      if (response.data?.success && response.data?.data) {
+      if (response?.data?.success && response?.data?.data) {
         const data = response.data.data;
-        setAllItems(data);
-        if (activeTab === "cars") {
+        if (targetTab === "cars") {
           setAllCars(data);
+          if (activeTab === "cars") {
+            setAllItems(data);
+          }
         } else {
           setAllRepairs(data);
+          if (activeTab === "repairs") {
+            setAllItems(data);
+          }
         }
       } else {
-        setAllItems([]);
-        if (activeTab === "cars") {
+        if (targetTab === "cars") {
           setAllCars([]);
+          if (activeTab === "cars") {
+            setAllItems([]);
+          }
         } else {
           setAllRepairs([]);
+          if (activeTab === "repairs") {
+            setAllItems([]);
+          }
         }
       }
     } catch (error) {
       console.error("Error cargando historial:", error);
       toast.error("Error cargando historial");
+      if (tab === "cars" || (!tab && activeTab === "cars")) {
+        setAllCars([]);
+        if (activeTab === "cars") {
+          setAllItems([]);
+        }
+      } else {
+        setAllRepairs([]);
+        if (activeTab === "repairs") {
+          setAllItems([]);
+        }
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadBothTabs = async (search = "") => {
+    try {
+      setLoading(true);
+      const params = {};
+      if (search.trim()) {
+        params.search = search.trim();
+      }
+
+      const [carsResponse, repairsResponse] = await Promise.all([
+        fetchWithCache(
+          'admin_historial_cars',
+          async () => await repairsService.getAllCars(params),
+          { search: params.search || '' }
+        ),
+        fetchWithCache(
+          'admin_historial_repairs',
+          async () => await repairsService.getAllRepairsOnly(params),
+          { search: params.search || '' }
+        )
+      ]);
+
+      if (carsResponse?.data?.success && carsResponse?.data?.data) {
+        setAllCars(carsResponse.data.data);
+        if (activeTab === "cars") {
+          setAllItems(carsResponse.data.data);
+        }
+      } else {
+        setAllCars([]);
+        if (activeTab === "cars") {
+          setAllItems([]);
+        }
+      }
+
+      if (repairsResponse?.data?.success && repairsResponse?.data?.data) {
+        setAllRepairs(repairsResponse.data.data);
+        if (activeTab === "repairs") {
+          setAllItems(repairsResponse.data.data);
+        }
+      } else {
+        setAllRepairs([]);
+        if (activeTab === "repairs") {
+          setAllItems([]);
+        }
+      }
+    } catch (error) {
+      console.error("Error cargando historial:", error);
+      toast.error("Error cargando historial");
+      setAllCars([]);
+      setAllRepairs([]);
       setAllItems([]);
     } finally {
       setLoading(false);
@@ -122,11 +208,11 @@ const AdminHistorial = () => {
   };
 
   useEffect(() => {
-    loadAllItems();
+    loadBothTabs();
   }, []);
 
   useEffect(() => {
-    loadAllItems(searchQuery);
+    loadAllItems(searchQuery, activeTab);
   }, [activeTab]);
 
   useEffect(() => {
@@ -136,7 +222,7 @@ const AdminHistorial = () => {
 
   useEffect(() => {
     const unregister = registerListener(() => {
-      loadAllItems(searchQuery);
+      loadBothTabs(searchQuery);
     });
     return unregister;
   }, [registerListener, searchQuery]);
@@ -180,7 +266,7 @@ const AdminHistorial = () => {
 
   const handleSearch = (query) => {
     setSearchQuery(query);
-    loadAllItems(query);
+    loadBothTabs(query);
   };
 
   const handleModifyStatus = (item) => {
@@ -188,7 +274,7 @@ const AdminHistorial = () => {
   };
 
   const refreshData = () => {
-    loadAllItems(searchQuery);
+    loadBothTabs(searchQuery);
   };
 
   const updateItemStatusOptimistically = (itemId, itemType, newStatusId) => {
@@ -716,6 +802,7 @@ const ModifyStatusModal = ({ item, onClose, carStatuses, onStatusChange, onOptim
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
+
     if (!selectedStatus) {
       toast.error("Por favor seleccione un estado");
       return;
@@ -736,9 +823,13 @@ const ModifyStatusModal = ({ item, onClose, carStatuses, onStatusChange, onOptim
         response = await repairsService.update(item.id, {
           statusId: newStatusId,
         });
+        clearCache('admin_historial_repairs', { search: '' });
+        clearCache('admin_historial_cars', { search: '' });
         toast.success("Estado de la reparación actualizado exitosamente");
       } else {
         response = await carsService.updateStatus(item.id, newStatusId);
+        clearCache('admin_historial_cars', { search: '' });
+        clearCache('admin_historial_repairs', { search: '' });
         const statusName = carStatuses?.find(s => s.id === newStatusId)?.name || 'estado';
         if (isTerminalStatus) {
           toast.success(`Estado cambiado a ${statusName}. Volverá a Entrada en 15 segundos`);
@@ -758,7 +849,8 @@ const ModifyStatusModal = ({ item, onClose, carStatuses, onStatusChange, onOptim
         setTimeout(() => {
           onOptimisticUpdate(item.id, item.type, 1);
           setTimeout(() => {
-            onStatusChange();
+            onStatusChange()
+              ;
             window.dispatchEvent(new CustomEvent('app-refresh'));
           }, 500);
         }, 15000);

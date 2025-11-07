@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import NavBar from '../NavBar';
 import { useAuth } from '../../contexts/AuthContext';
 import { requestsService, carsService, repairsService } from '../../services/api';
-import { LoadingSpinner } from '../ui';
 import PropTypes from 'prop-types';
 
 const MechanicRepairs = () => {
@@ -10,7 +9,6 @@ const MechanicRepairs = () => {
   const mechanicId = user?.mechanic?.id;
   const clientId = user?.client?.id;
   const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('Todas');
 
   const loadForMechanic = async () => {
@@ -42,7 +40,6 @@ const MechanicRepairs = () => {
   };
 
   const loadData = async () => {
-    setLoading(true);
     try {
       if (roleKey === 'mecanico' && mechanicId) {
         await loadForMechanic();
@@ -51,8 +48,9 @@ const MechanicRepairs = () => {
       } else {
         setItems([]);
       }
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      setItems([]);
     }
   };
 
@@ -119,24 +117,20 @@ const MechanicRepairs = () => {
       <NavBar roleBadge={roleKey === 'mecanico' ? 'Mecánico' : null} />
       <div className="max-w-5xl mx-auto p-4">
         <h2 className="text-xl font-semibold mb-4">Mis Arreglos</h2>
-        {loading ? (
-          <LoadingSpinner text="Cargando arreglos..." />
-        ) : (
-          <div className="flex w-full justify-center mb-3">
-            <div className="flex bg-white rounded-full shadow p-1">
-              {['Todas', 'Pendiente', 'En reparacion', 'Finalizado'].map(s => (
-                <button
-                  key={s}
-                  onClick={() => setStatusFilter(s)}
-                  className={`px-6 py-2 rounded-full text-xs border ${statusFilter === s ? 'bg-green-100 text-green-900 font-medium border-green-400' : 'text-gray-700 hover:bg-gray-100'}`}
-                >
-                  {s.replace('-', ' ')}
-                </button>
-              ))}
-            </div>
+        <div className="flex w-full justify-center mb-3">
+          <div className="flex bg-white rounded-full shadow p-1">
+            {['Todas', 'Pendiente', 'En reparacion', 'Finalizado'].map(s => (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                className={`px-6 py-2 rounded-full text-xs border ${statusFilter === s ? 'bg-green-100 text-green-900 font-medium border-green-400' : 'text-gray-700 hover:bg-gray-100'}`}
+              >
+                {s.replace('-', ' ')}
+              </button>
+            ))}
           </div>
-        )}
-        {!loading && roleKey === 'mecanico' && (
+        </div>
+        {roleKey === 'mecanico' && (
           <div className="space-y-3">
             {filteredItems.map(r => (
               <div key={r.id} className="bg-white rounded shadow p-4 flex items-center justify-between">
@@ -155,7 +149,7 @@ const MechanicRepairs = () => {
           </div>
         )}
 
-        {!loading && roleKey === 'cliente' && (
+        {roleKey === 'cliente' && (
           <div className="space-y-3">
             {filteredItems.map((it, idx) => (
               <div key={`${it.repair?.id || idx}`} className="bg-white rounded shadow p-4 flex items-center justify-between">

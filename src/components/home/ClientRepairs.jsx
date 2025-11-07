@@ -4,7 +4,7 @@ import NavBar from "../NavBar";
 import { useAuth } from "../../contexts/AuthContext";
 import { useConfig } from "../../contexts/ConfigContext";
 import { clientRepairsService, paymentsService } from "../../services/api";
-import { Button, Card, CardContent, Badge, SegmentedControl, LoadingSpinner } from "../ui";
+import { Button, Card, CardContent, Badge, SegmentedControl } from "../ui";
 import {
   Car,
   Wrench,
@@ -25,7 +25,6 @@ const ClientRepairs = () => {
   const [cars, setCars] = useState([]);
   const [allCars, setAllCars] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState("all");
-  const [loading, setLoading] = useState(true);
 
   const clientId = user?.client?.id;
 
@@ -124,7 +123,6 @@ const ClientRepairs = () => {
     if (!clientId) return;
 
     try {
-      setLoading(true);
       const response = await clientRepairsService.getRepairs(clientId);
       console.log("Datos de reparaciones cargados:", response.data.data);
       setAllCars(response.data.data.cars);
@@ -132,8 +130,6 @@ const ClientRepairs = () => {
     } catch (error) {
       console.error("Error cargando arreglos:", error);
       toast.error("Error cargando arreglos");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -236,17 +232,6 @@ const ClientRepairs = () => {
       count: getStatusCount(status.id),
     })) || []),
   ];
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <NavBar roleBadge={true} showHistory={false} />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <LoadingSpinner text="Cargando arreglos..." size="lg" />
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
