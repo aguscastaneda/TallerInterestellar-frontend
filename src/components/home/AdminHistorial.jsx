@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { toast } from "react-hot-toast";
 import NavBar from "../NavBar";
 import { useConfig } from "../../contexts/ConfigContext";
+import { useRefresh } from "../../contexts/RefreshContext";
 import { repairsService, carsService } from "../../services/api";
 import {
   Button,
@@ -14,6 +15,7 @@ import {
   ModalContent,
   ModalFooter,
   SegmentedControl,
+  LoadingSpinner,
 } from "../ui";
 import {
   ArrowLeft,
@@ -29,8 +31,11 @@ import PropTypes from "prop-types";
 
 const AdminHistorial = () => {
   const { config, getStatusColor, getStatusName } = useConfig();
+  const { registerListener, triggerRefresh } = useRefresh();
   const [items, setItems] = useState([]);
   const [allItems, setAllItems] = useState([]);
+  const [allCars, setAllCars] = useState([]);
+  const [allRepairs, setAllRepairs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [showItemDetails, setShowItemDetails] = useState(null);
@@ -57,9 +62,20 @@ const AdminHistorial = () => {
       }
 
       if (response.data?.success && response.data?.data) {
-        setAllItems(response.data.data);
+        const data = response.data.data;
+        setAllItems(data);
+        if (activeTab === "cars") {
+          setAllCars(data);
+        } else {
+          setAllRepairs(data);
+        }
       } else {
         setAllItems([]);
+        if (activeTab === "cars") {
+          setAllCars([]);
+        } else {
+          setAllRepairs([]);
+        }
       }
     } catch (error) {
       console.error("Error cargando historial:", error);
@@ -114,6 +130,18 @@ const AdminHistorial = () => {
   }, [activeTab]);
 
   useEffect(() => {
+    const itemsToUse = activeTab === "cars" ? allCars : allRepairs;
+    setAllItems(itemsToUse);
+  }, [activeTab, allCars, allRepairs]);
+
+  useEffect(() => {
+    const unregister = registerListener(() => {
+      loadAllItems(searchQuery);
+    });
+    return unregister;
+  }, [registerListener, searchQuery]);
+
+  useEffect(() => {
     const filteredItems = applyFilters(allItems, selectedStatus, searchQuery);
     setItems(filteredItems);
   }, [allItems, selectedStatus, searchQuery]);
@@ -124,8 +152,10 @@ const AdminHistorial = () => {
   };
 
   const getStatusCount = (statusId) => {
+    const itemsToCount = activeTab === "cars" ? allCars : allRepairs;
+
     if (statusId === "all") {
-      return allItems.length;
+      return itemsToCount.length;
     }
 
     const statusIdInt = parseInt(statusId);
@@ -133,15 +163,15 @@ const AdminHistorial = () => {
       return 0;
     }
 
-    const repairCount = allItems.filter(
-      (item) => item.type === "repair" && item.statusId === statusIdInt
-    ).length;
-
-    const carWithoutRepairsCount = allItems.filter(
-      (item) => item.type === "car" && item.statusId === statusIdInt
-    ).length;
-
-    return repairCount + carWithoutRepairsCount;
+    if (activeTab === "cars") {
+      return itemsToCount.filter(
+        (item) => item.type === "car" && item.statusId === statusIdInt
+      ).length;
+    } else {
+      return itemsToCount.filter(
+        (item) => (item.type === "repair" || item.type === "request") && item.statusId === statusIdInt
+      ).length;
+    }
   };
 
   const handleStatusFilter = (statusId) => {
@@ -161,22 +191,59 @@ const AdminHistorial = () => {
     loadAllItems(searchQuery);
   };
 
+  const updateItemStatusOptimistically = (itemId, itemType, newStatusId) => {
+    setAllItems(prevItems =>
+      prevItems.map(item => {
+        if (item.id === itemId && item.type === itemType) {
+          const newStatus = carStatuses?.find(s => s.id === newStatusId);
+          return {
+            ...item,
+            statusId: newStatusId,
+            status: newStatus ? { id: newStatus.id, name: newStatus.name } : item.status,
+            car: item.car ? {
+              ...item.car,
+              statusId: newStatusId,
+              status: newStatus ? { id: newStatus.id, name: newStatus.name } : item.car?.status
+            } : item.car
+          };
+        }
+        return item;
+      })
+    );
+  };
+
   const tabOptions = useMemo(
-    () => [
-      {
-        value: "all",
-        label: "Todos",
-        icon: <Wrench className="h-4 w-4" />,
-        count: getStatusCount("all"),
-      },
-      ...(carStatuses?.map((status) => ({
-        value: status.id,
-        label: status.name,
-        icon: <Wrench className="h-4 w-4" />,
-        count: getStatusCount(status.id),
-      })) || []),
-    ],
-    [allItems, carStatuses]
+    () => {
+      const itemsForCount = activeTab === "cars" ? allCars : allRepairs;
+      return [
+        {
+          value: "all",
+          label: "Todos",
+          icon: <Wrench className="h-4 w-4" />,
+          count: itemsForCount.length,
+        },
+        ...(carStatuses?.map((status) => {
+          const statusIdInt = parseInt(status.id);
+          let count = 0;
+          if (activeTab === "cars") {
+            count = itemsForCount.filter(
+              (item) => item.type === "car" && item.statusId === statusIdInt
+            ).length;
+          } else {
+            count = itemsForCount.filter(
+              (item) => (item.type === "repair" || item.type === "request") && item.statusId === statusIdInt
+            ).length;
+          }
+          return {
+            value: status.id,
+            label: status.name,
+            icon: <Wrench className="h-4 w-4" />,
+            count: count,
+          };
+        }) || []),
+      ];
+    },
+    [allCars, allRepairs, activeTab, carStatuses]
   );
 
   if (loading && allItems.length === 0) {
@@ -184,12 +251,7 @@ const AdminHistorial = () => {
       <div className="min-h-screen bg-gray-50">
         <NavBar roleBadge={true} showHistory={false} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Cargando historial...</p>
-            </div>
-          </div>
+          <LoadingSpinner text="Cargando historial..." size="lg" />
         </div>
       </div>
     );
@@ -253,7 +315,7 @@ const AdminHistorial = () => {
               >
                 <div className="flex items-center space-x-2">
                   <Car className="h-4 w-4" />
-                  <span>Autos ({getStatusCount("all")})</span>
+                  <span>Autos ({allCars.length})</span>
                 </div>
               </button>
               <button
@@ -265,7 +327,7 @@ const AdminHistorial = () => {
               >
                 <div className="flex items-center space-x-2">
                   <Wrench className="h-4 w-4" />
-                  <span>Reparaciones ({getStatusCount("all")})</span>
+                  <span>Reparaciones ({allRepairs.length})</span>
                 </div>
               </button>
             </nav>
@@ -640,6 +702,7 @@ const AdminHistorial = () => {
             onClose={() => setShowModifyStatus(null)}
             carStatuses={carStatuses}
             onStatusChange={refreshData}
+            onOptimisticUpdate={updateItemStatusOptimistically}
           />
         )}
       </div>
@@ -647,7 +710,7 @@ const AdminHistorial = () => {
   );
 };
 
-const ModifyStatusModal = ({ item, onClose, carStatuses, onStatusChange }) => {
+const ModifyStatusModal = ({ item, onClose, carStatuses, onStatusChange, onOptimisticUpdate }) => {
   const [selectedStatus, setSelectedStatus] = useState(item.statusId || "");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
@@ -658,24 +721,56 @@ const ModifyStatusModal = ({ item, onClose, carStatuses, onStatusChange }) => {
       return;
     }
 
+    const newStatusId = parseInt(selectedStatus);
+    const terminalStatuses = [4, 7, 8];
+    const isTerminalStatus = terminalStatuses.includes(newStatusId);
+
+    if (onOptimisticUpdate) {
+      onOptimisticUpdate(item.id, item.type, newStatusId);
+    }
+
     setLoading(true);
     try {
       let response;
       if (item.type === "repair") {
         response = await repairsService.update(item.id, {
-          statusId: parseInt(selectedStatus),
+          statusId: newStatusId,
         });
         toast.success("Estado de la reparación actualizado exitosamente");
       } else {
-        response = await carsService.updateStatus(item.id, parseInt(selectedStatus));
-        toast.success("Estado del auto actualizado exitosamente");
+        response = await carsService.updateStatus(item.id, newStatusId);
+        const statusName = carStatuses?.find(s => s.id === newStatusId)?.name || 'estado';
+        if (isTerminalStatus) {
+          toast.success(`Estado cambiado a ${statusName}. Volverá a Entrada en 15 segundos`);
+        } else {
+          toast.success("Estado del auto actualizado exitosamente");
+        }
       }
-      onStatusChange();
+
       onClose();
+
+      setTimeout(() => {
+        onStatusChange();
+        window.dispatchEvent(new CustomEvent('app-refresh'));
+      }, 300);
+
+      if (isTerminalStatus && onOptimisticUpdate) {
+        setTimeout(() => {
+          onOptimisticUpdate(item.id, item.type, 1);
+          setTimeout(() => {
+            onStatusChange();
+            window.dispatchEvent(new CustomEvent('app-refresh'));
+          }, 500);
+        }, 15000);
+      }
     } catch (error) {
       console.error("Error updating status:", error);
       console.error("Error response:", error.response?.data);
       console.error("Error status:", error.response?.status);
+
+      if (onOptimisticUpdate) {
+        onOptimisticUpdate(item.id, item.type, item.statusId);
+      }
 
       const itemType = item.type === "repair" ? "reparación" : "auto";
 
@@ -691,6 +786,11 @@ const ModifyStatusModal = ({ item, onClose, carStatuses, onStatusChange }) => {
       } else {
         toast.error(`Error al actualizar el estado del ${itemType}: ${error.response?.data?.message || error.message}`);
       }
+
+      setTimeout(() => {
+        onStatusChange();
+        window.dispatchEvent(new CustomEvent('app-refresh'));
+      }, 500);
     } finally {
       setLoading(false);
     }
@@ -793,6 +893,7 @@ ModifyStatusModal.propTypes = {
     })
   ),
   onStatusChange: PropTypes.func.isRequired,
+  onOptimisticUpdate: PropTypes.func,
 };
 
 const getRepairStatusColor = (carStatusId) => {

@@ -3,7 +3,7 @@ import { toast } from 'react-hot-toast';
 import NavBar from '../NavBar';
 import { useConfig } from '../../contexts/ConfigContext';
 import { carsService, carStatesService } from '../../services/api';
-import { Button, Card, CardContent, Badge, Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter, SegmentedControl } from '../ui';
+import { Button, Card, CardContent, Badge, Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter, SegmentedControl, LoadingSpinner } from '../ui';
 import { Car, Eye, CheckCircle, User, Mail, Phone, Calendar, MapPin } from 'lucide-react';
 
 const RecepcionistaHome = () => {
@@ -40,6 +40,15 @@ const RecepcionistaHome = () => {
 
   useEffect(() => {
     loadCars();
+    
+    const handleRefresh = () => {
+      loadCars();
+    };
+    
+    window.addEventListener('app-refresh', handleRefresh);
+    return () => {
+      window.removeEventListener('app-refresh', handleRefresh);
+    };
   }, []);
 
   const doSearch = async () => {
@@ -59,6 +68,7 @@ const RecepcionistaHome = () => {
       toast.success('Auto entregado exitosamente');
       setShowDeliveryModal(null);
       loadCars();
+      window.dispatchEvent(new CustomEvent('app-refresh'));
     } catch (error) {
       console.error('Error entregando auto:', error);
       toast.error('Error al entregar el auto');
@@ -214,7 +224,9 @@ const RecepcionistaHome = () => {
 
         {/* Lista de vehículos */}
         <div className="space-y-4">
-          {cars.length === 0 ? (
+          {loading ? (
+            <LoadingSpinner text="Cargando vehículos..." />
+          ) : cars.length === 0 ? (
             <Card className="text-center py-12">
               <CardContent>
                 <Car className="h-12 w-12 text-gray-400 mx-auto mb-4" />

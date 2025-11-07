@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
 import { Button, Input, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './ui';
 import { ArrowLeft, Mail, Send } from 'lucide-react';
+import { buildBaseURL } from '../services/api';
 
 const ForgotPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -31,7 +32,7 @@ const ForgotPassword = () => {
     setIsLoading(true);
     setError("");
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/forgot-password`, {
+      const response = await fetch(`${buildBaseURL()}/auth/forgot-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

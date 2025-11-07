@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import NavBar from '../NavBar';
 import { useAuth } from '../../contexts/AuthContext';
 import { requestsService, carsService, repairsService } from '../../services/api';
+import { LoadingSpinner } from '../ui';
 import PropTypes from 'prop-types';
 
 const MechanicRepairs = () => {
@@ -18,7 +19,6 @@ const MechanicRepairs = () => {
   };
 
   const loadForClient = async () => {
-    // Traer solicitudes del cliente y reparaciones de sus autos
     const [carsRes, reqRes] = await Promise.all([
       carsService.getByClient(clientId),
       requestsService.getByClient(clientId)
@@ -26,11 +26,9 @@ const MechanicRepairs = () => {
     const cars = carsRes.data.data || [];
     const requests = reqRes.data.data || [];
     const all = [];
-    // Normalizar solicitudes
     for (const r of requests) {
       all.push({ type: 'request', request: r, car: r.car });
     }
-    // Agregar reparaciones por auto
     for (const car of cars) {
       try {
         const repRes = await repairsService.getByCar(car.id);
@@ -58,16 +56,13 @@ const MechanicRepairs = () => {
     }
   };
 
-  // Load data on component mount
   useEffect(() => {
     loadData();
 
-    // Set up periodic refresh every 30 seconds
     const interval = setInterval(() => {
       loadData();
     }, 30000);
 
-    // Clean up interval on component unmount
     return () => clearInterval(interval);
   }, [roleKey, mechanicId, clientId]);
 
@@ -79,7 +74,6 @@ const MechanicRepairs = () => {
       'Finalizado': 'Finalizado',
     };
     return items.filter(it => {
-      // Para cliente usamos SIEMPRE el estado real del auto
       if (it.type === 'request') {
         const carTarget = mapLabelToCar[statusFilter];
         return carTarget ? (String(it.car?.status?.name) === carTarget) : false;
@@ -89,9 +83,7 @@ const MechanicRepairs = () => {
         if (!carTarget) return statusFilter === 'Todas';
         return String(it.car?.status?.name) === carTarget;
       }
-      // Mecánico items no tipados: r de mechanic requests
       if (!it.type && it.status) {
-        // Para mecánico seguimos usando status de request
         const reqMap = { 'Pendiente': 'PENDING', 'En reparacion': 'IN_PROGRESS', 'Finalizado': 'COMPLETED' };
         const target = reqMap[statusFilter];
         return target ? it.status === target : false;
@@ -127,8 +119,9 @@ const MechanicRepairs = () => {
       <NavBar roleBadge={roleKey === 'mecanico' ? 'Mecánico' : null} />
       <div className="max-w-5xl mx-auto p-4">
         <h2 className="text-xl font-semibold mb-4">Mis Arreglos</h2>
-        {loading && <div className="text-sm text-gray-600">Cargando...</div>}
-        {!loading && (
+        {loading ? (
+          <LoadingSpinner text="Cargando arreglos..." />
+        ) : (
           <div className="flex w-full justify-center mb-3">
             <div className="flex bg-white rounded-full shadow p-1">
               {['Todas', 'Pendiente', 'En reparacion', 'Finalizado'].map(s => (

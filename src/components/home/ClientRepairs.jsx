@@ -4,7 +4,7 @@ import NavBar from "../NavBar";
 import { useAuth } from "../../contexts/AuthContext";
 import { useConfig } from "../../contexts/ConfigContext";
 import { clientRepairsService, paymentsService } from "../../services/api";
-import { Button, Card, CardContent, Badge, SegmentedControl } from "../ui";
+import { Button, Card, CardContent, Badge, SegmentedControl, LoadingSpinner } from "../ui";
 import {
   Car,
   Wrench,
@@ -242,9 +242,7 @@ const ClientRepairs = () => {
       <div className="min-h-screen bg-gray-50">
         <NavBar roleBadge={true} showHistory={false} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
-          </div>
+          <LoadingSpinner text="Cargando arreglos..." size="lg" />
         </div>
       </div>
     );
@@ -397,7 +395,7 @@ const ClientRepairs = () => {
                                       </span>
                                     </div>
                                     {/* Botón Pagar para reparaciones finalizadas */}
-                                    {car.statusId === 6 && ( // 6 = Finalizado
+                                    {car.statusId === 6 && (
                                       <Button
                                         onClick={() => handlePayment(repair)}
                                         size="sm"

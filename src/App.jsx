@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ConfigProvider } from './contexts/ConfigContext';
+import { RefreshProvider } from './contexts/RefreshContext';
 import { Toaster } from 'react-hot-toast';
 import { setNavigateFunction } from './services/api';
 import Login from './components/Login';
@@ -300,11 +301,12 @@ const App = () => {
   return (
     <ConfigProvider>
       <AuthProvider>
-        <Router>
-          <NavigateSetter />
-          <ScrollToTop />
-          <AppRoutes />
-          <Toaster
+        <RefreshProvider>
+          <Router>
+            <NavigateSetter />
+            <ScrollToTop />
+            <AppRoutes />
+            <Toaster
             position="top-right"
             toastOptions={{
               duration: 4000,
@@ -328,7 +330,8 @@ const App = () => {
               },
             }}
           />
-        </Router>
+          </Router>
+        </RefreshProvider>
       </AuthProvider>
     </ConfigProvider>
   );

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import NavBar from '../NavBar';
 import { analyticsService } from '../../services/api';
-import { SegmentedControl, Card } from '../ui';
+import { SegmentedControl, Card, LoadingSpinner } from '../ui';
 import {
     ResponsiveContainer,
     BarChart,
@@ -66,11 +66,6 @@ const ChartCard = ({ title, subtitle, children }) => (
     </Card>
 );
 
-const Loading = () => (
-    <div className="h-72 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-red-600" />
-    </div>
-);
 
 const Empty = ({ text = 'Sin datos' }) => (
     <div className="h-72 flex items-center justify-center text-sm text-gray-500">{text}</div>
@@ -177,7 +172,7 @@ const AdminCharts = () => {
                 )}
 
                 {loading ? (
-                    <Loading />
+                    <LoadingSpinner text="Cargando gráficos..." size="lg" />
                 ) : (
                     <div className="space-y-10">
                         {/* Común: Autos por estado */}
@@ -186,7 +181,7 @@ const AdminCharts = () => {
                                 {pieData.length === 0 ? (
                                     <Empty />
                                 ) : (
-									<div className="h-full w-full flex flex-col md:flex-row md:items-center gap-4">
+                                    <div className="h-full w-full flex flex-col md:flex-row md:items-center gap-4">
                                         <div className="md:flex-1 h-72">
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <PieChart>
@@ -200,7 +195,7 @@ const AdminCharts = () => {
                                             </ResponsiveContainer>
                                         </div>
                                         {/* Leyenda a la derecha en pantallas medianas+ y abajo en móviles */}
-										<div className="md:w-64 md:flex-none">
+                                        <div className="md:w-64 md:flex-none">
                                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-1 gap-2 text-xs text-gray-700">
                                                 {pieData.map((p, i) => (
                                                     <div key={`legend-${i}`} className="flex items-center">

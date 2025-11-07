@@ -3,7 +3,7 @@ import NavBar from '../NavBar';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { carsService, requestsService } from '../../services/api';
-import { Button, Card, CardContent, Badge, Input, Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter, SegmentedControl } from '../ui';
+import { Button, Card, CardContent, Badge, Input, Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter, SegmentedControl, LoadingSpinner } from '../ui';
 import { Wrench, Clock, CheckCircle, Eye, Square, DollarSign, Car, Calendar, Clock3, CalendarCheck, Shield } from 'lucide-react';
 import PropTypes from 'prop-types';
 
@@ -16,17 +16,21 @@ const MecanicoHome = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [finishModalOpen, setFinishModalOpen] = useState(null);
   const [budgetModalOpen, setBudgetModalOpen] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const mechanicId = user?.mechanic?.id;
 
   const load = async () => {
     if (!mechanicId) return;
     try {
+      setLoading(true);
       const response = await requestsService.getByMechanic(mechanicId);
       const filteredRequests = (response.data.data || []).filter(request => request.status !== 'CANCELLED');
       setRequests(filteredRequests);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Error cargando solicitudes');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -37,7 +41,16 @@ const MecanicoHome = () => {
       load();
     }, 30000);
 
-    return () => clearInterval(interval);
+    const handleRefresh = () => {
+      load();
+    };
+    
+    window.addEventListener('app-refresh', handleRefresh);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('app-refresh', handleRefresh);
+    };
   }, [mechanicId]);
 
   const doSearch = async () => {
@@ -56,6 +69,7 @@ const MecanicoHome = () => {
       await requestsService.sendBudget(reqItem.id, budgetData);
       toast.success('Presupuesto enviado al cliente');
       load();
+      window.dispatchEvent(new CustomEvent('app-refresh'));
     } catch (error) { toast.error(error.response?.data?.message || 'Error al enviar presupuesto'); }
   };
 
@@ -64,6 +78,7 @@ const MecanicoHome = () => {
       await requestsService.updateStatus(reqItem.id, { status: 'COMPLETED', description: payload.description, cost: payload.cost });
       toast.success('Trabajo finalizado');
       load();
+      window.dispatchEvent(new CustomEvent('app-refresh'));
     } catch (error) { toast.error(error.response?.data?.message || 'Error al finalizar'); }
   };
 
@@ -183,7 +198,9 @@ const MecanicoHome = () => {
 
         {/* Lista de trabajos */}
         <div className="space-y-4">
-          {filteredRequests.length === 0 ? (
+          {loading ? (
+            <LoadingSpinner text="Cargando trabajos..." />
+          ) : filteredRequests.length === 0 ? (
             <Card className="text-center py-12">
               <CardContent>
                 <Wrench className="h-12 w-12 text-gray-400 mx-auto mb-4" />

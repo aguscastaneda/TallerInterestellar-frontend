@@ -16,6 +16,7 @@ import {
   ModalContent,
   ModalFooter,
   SegmentedControl,
+  LoadingSpinner,
 } from "../ui";
 import {
   User,
@@ -59,6 +60,7 @@ const AdminHome = () => {
   const [searchResult, setSearchResult] = useState(null);
   const [users, setUsers] = useState([]);
   const [bosses, setBosses] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [showUserDetails, setShowUserDetails] = useState(null);
@@ -94,6 +96,7 @@ const AdminHome = () => {
 
   const loadUsers = async () => {
     try {
+      setLoading(true);
       const res = await usersService.getAll();
 
       if (res.data?.success && res.data?.data) {
@@ -107,6 +110,8 @@ const AdminHome = () => {
         "Error loading users: " + (e.response?.data?.message || e.message)
       );
       setUsers([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -134,6 +139,16 @@ const AdminHome = () => {
   useEffect(() => {
     loadUsers();
     loadBosses();
+    
+    const handleRefresh = () => {
+      loadUsers();
+      loadBosses();
+    };
+    
+    window.addEventListener('app-refresh', handleRefresh);
+    return () => {
+      window.removeEventListener('app-refresh', handleRefresh);
+    };
   }, []);
 
   const doSearch = async () => {
@@ -171,6 +186,7 @@ const AdminHome = () => {
       await usersService.create(formData);
       toast.success("Usuario creado exitosamente");
       setShowCreateForm(false);
+      window.dispatchEvent(new CustomEvent('app-refresh'));
       setCreateForm({
         name: "",
         lastName: "",
@@ -196,6 +212,7 @@ const AdminHome = () => {
       await usersService.delete(userId);
       toast.success(`Usuario ${action}do correctamente`);
       loadUsers();
+      window.dispatchEvent(new CustomEvent('app-refresh'));
     } catch (error) {
       toast.error(
         error.response?.data?.message || `Error al ${action} usuario`
@@ -232,6 +249,7 @@ const AdminHome = () => {
       toast.success("Usuario actualizado correctamente");
       setShowEditForm(false);
       setEditingUser(null);
+      window.dispatchEvent(new CustomEvent('app-refresh'));
       loadUsers();
     } catch (error) {
       toast.error(
@@ -612,7 +630,9 @@ const AdminHome = () => {
 
         {/* Lista de usuarios */}
         <div className="space-y-4">
-          {getUsersByRole(
+          {loading ? (
+            <LoadingSpinner text="Cargando usuarios..." />
+          ) : getUsersByRole(
             activeTab === "clientes" ? 1 : activeTab === "mecanicos" ? 2 : 3
           ).length === 0 ? (
             <Card className="text-center py-12">

@@ -16,6 +16,7 @@ import {
   ModalContent,
   ModalFooter,
   SegmentedControl,
+  LoadingSpinner,
 } from "../ui";
 import {
   Wrench,
@@ -47,7 +48,7 @@ const JefeHome = () => {
   const [searchResult, setSearchResult] = useState(null);
   const [requests, setRequests] = useState([]);
   const [mechanics, setMechanics] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedMechanic, setSelectedMechanic] = useState("all");
@@ -113,7 +114,16 @@ const JefeHome = () => {
       load();
     }, 30000);
 
-    return () => clearInterval(interval);
+    const handleRefresh = () => {
+      load();
+    };
+    
+    window.addEventListener('app-refresh', handleRefresh);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('app-refresh', handleRefresh);
+    };
   }, [bossId]);
 
   const doSearch = async () => {
@@ -132,6 +142,7 @@ const JefeHome = () => {
       await requestsService.assignMechanic(requestId, mechanicId);
       toast.success("Asignado");
       load();
+      window.dispatchEvent(new CustomEvent('app-refresh'));
     } catch (error) {
       toast.error(error.response?.data?.message || "Error al asignar");
     }
@@ -156,6 +167,7 @@ const JefeHome = () => {
 
       toast.success("Mecánico creado correctamente");
       setShowCreateMechanic(false);
+      window.dispatchEvent(new CustomEvent('app-refresh'));
       setCreateForm({
         name: "",
         lastName: "",
@@ -200,6 +212,7 @@ const JefeHome = () => {
       toast.success("Mecánico actualizado correctamente");
       setShowEditMechanic(false);
       setEditingMechanic(null);
+      window.dispatchEvent(new CustomEvent('app-refresh'));
       load();
     } catch (e) {
       toast.error(e.response?.data?.message || "Error al actualizar mecánico");
@@ -213,7 +226,7 @@ const JefeHome = () => {
       const response = await usersService.delete(userId);
       console.log("Respuesta del servidor:", response.data);
       toast.success("Mecánico eliminado correctamente");
-
+      window.dispatchEvent(new CustomEvent('app-refresh'));
       await load();
     } catch (e) {
       console.error("Error al eliminar mecánico:", e);
@@ -311,9 +324,7 @@ const JefeHome = () => {
       <div className="min-h-screen bg-gray-50">
         <NavBar roleBadge={true} showHistory={false} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
-          </div>
+          <LoadingSpinner text="Cargando datos..." size="lg" />
         </div>
       </div>
     );

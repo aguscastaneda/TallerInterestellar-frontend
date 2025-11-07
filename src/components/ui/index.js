@@ -5,3 +5,4 @@ export { default as Input } from './Input';
 export { Modal, ModalHeader, ModalTitle, ModalDescription, ModalContent, ModalFooter } from './Modal';
 export { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption } from './Table';
 export { default as SegmentedControl } from './SegmentedControl';
+export { default as LoadingSpinner } from './LoadingSpinner';

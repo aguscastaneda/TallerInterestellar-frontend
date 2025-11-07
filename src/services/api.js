@@ -1,13 +1,46 @@
 import axios from 'axios';
 
+export const buildBaseURL = () => {
+  let isLocalDevelopment = false;
+  let currentOrigin = '';
+
+  if (typeof window !== 'undefined' && window.location) {
+    currentOrigin = window.location.origin;
+    isLocalDevelopment = currentOrigin.includes('localhost') ||
+      currentOrigin.includes('127.0.0.1') ||
+      currentOrigin.includes(':5173');
+  }
+
+  const envBase = import.meta.env.VITE_API_URL;
+
+  if (isLocalDevelopment) {
+    if (envBase && typeof envBase === 'string' && envBase.trim() !== '') {
+      const trimmed = envBase.trim().replace(/\/$/, '');
+      if (trimmed.includes('localhost') || trimmed.includes('127.0.0.1')) {
+        const baseURL = trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+        return baseURL;
+      }
+    }
+    return 'http://localhost:3001/api';
+  }
+
+  if (envBase && typeof envBase === 'string' && envBase.trim() !== '') {
+    const trimmed = envBase.trim().replace(/\/$/, '');
+    const baseURL = trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+    return baseURL;
+  }
+
+  return 'https://api.tallerinterestellar.com.ar/api';
+};
 
 export const api = axios.create({
-  baseURL: 'http://localhost:3001/api',
+  baseURL: buildBaseURL(),
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
 
 
 let navigateFunction = null;

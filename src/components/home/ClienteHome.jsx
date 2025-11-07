@@ -4,7 +4,7 @@ import NavBar from '../NavBar';
 import { useAuth } from '../../contexts/AuthContext';
 import { useConfig } from '../../contexts/ConfigContext';
 import { carsService, usersService, requestsService } from '../../services/api';
-import { Button, Card, CardHeader, CardTitle, CardContent, CardFooter, Input, Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter } from '../ui';
+import { Button, Card, CardHeader, CardTitle, CardContent, CardFooter, Input, Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter, LoadingSpinner } from '../ui';
 import { Plus, Car, Wrench, Settings, Eye, X, CheckCircle, Clock, AlertCircle, Trash2 } from 'lucide-react';
 import { licensePlateValidator } from '../../utils/licensePlateValidator';
 import ProblemSelector from '../repair/ProblemSelector';
@@ -25,12 +25,14 @@ const ClienteHome = () => {
   const [showProblemSelector, setShowProblemSelector] = useState(false);
   const [selectedProblemData, setSelectedProblemData] = useState(null);
   const [carToCancel, setCarToCancel] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const clientId = user?.client?.id;
 
   const load = async () => {
     if (!clientId) return;
     try {
+      setLoading(true);
       const [carsRes, mechsRes] = await Promise.all([
         carsService.getByClient(clientId),
         usersService.getMechanics()
@@ -49,6 +51,8 @@ const ClienteHome = () => {
 
       setCars([]);
       setMechanics([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -56,13 +60,20 @@ const ClienteHome = () => {
   useEffect(() => {
     load();
 
-
     const interval = setInterval(() => {
       load();
     }, 30000);
 
-
-    return () => clearInterval(interval);
+    const handleRefresh = () => {
+      load();
+    };
+    
+    window.addEventListener('app-refresh', handleRefresh);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('app-refresh', handleRefresh);
+    };
   }, [clientId]);
 
   const validateForm = () => {
@@ -115,6 +126,7 @@ const ClienteHome = () => {
       toast.success('Patente registrada');
       setShowAdd(false);
       setForm({ licensePlate: '', brand: '', model: '', year: '', kms: '', chassis: '' });
+      window.dispatchEvent(new CustomEvent('app-refresh'));
       setFormErrors({});
       load();
     } catch (error) {
@@ -167,6 +179,7 @@ const ClienteHome = () => {
 
       toast.success('Solicitud enviada');
       setRequestOpenId(null);
+      window.dispatchEvent(new CustomEvent('app-refresh'));
 
       load();
     } catch (error) {
@@ -187,7 +200,7 @@ const ClienteHome = () => {
       if (requestToCancel) {
         await requestsService.cancelRequest(requestToCancel.id);
         toast.success('Solicitud cancelada');
-
+        window.dispatchEvent(new CustomEvent('app-refresh'));
         load();
       } else {
         toast.error('No se encontró una solicitud activa para este vehículo');
@@ -226,6 +239,7 @@ const ClienteHome = () => {
     try {
       await carsService.delete(carId);
       toast.success('Vehículo eliminado exitosamente');
+      window.dispatchEvent(new CustomEvent('app-refresh'));
       load();
     } catch (error) {
       console.error('Error deleting car:', error);
@@ -406,7 +420,9 @@ const ClienteHome = () => {
 
         {/* Lista de vehículos */}
         <div className="grid gap-6">
-          {cars.length === 0 ? (
+          {loading ? (
+            <LoadingSpinner text="Cargando vehículos..." />
+          ) : cars.length === 0 ? (
             <Card className="text-center py-12">
               <CardContent>
                 <Car className="h-12 w-12 text-gray-400 mx-auto mb-4" />
