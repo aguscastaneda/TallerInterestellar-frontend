@@ -4,7 +4,7 @@ import NavBar from "../NavBar";
 import { useAuth } from "../../contexts/AuthContext";
 import { useConfig } from "../../contexts/ConfigContext";
 import { carsService, usersService } from "../../services/api";
-import { fetchWithCache, clearCache } from "../../services/cache";
+import { fetchWithCache, fetchWithoutCache, clearCache } from "../../services/cache";
 import {
   Button,
   Card,
@@ -193,12 +193,11 @@ const AdminHome = () => {
         delete formData.bossId;
       }
 
-      await usersService.create(formData);
+      const response = await usersService.create(formData);
       clearCache('admin_users');
       clearCache('admin_bosses');
       toast.success("Usuario creado exitosamente");
       setShowCreateForm(false);
-      window.dispatchEvent(new CustomEvent('app-refresh'));
       setCreateForm({
         name: "",
         lastName: "",
@@ -208,8 +207,23 @@ const AdminHome = () => {
         roleId: ROLE_IDS.CLIENT,
         bossId: "",
       });
-      loadUsers();
+
+      const [usersRes, bossesRes] = await Promise.all([
+        fetchWithoutCache('admin_users', async () => await usersService.getAll(), {}),
+        fetchWithoutCache('admin_bosses', async () => await usersService.getBosses(), {})
+      ]);
+
+      if (usersRes?.data?.success && usersRes?.data?.data) {
+        setUsers(usersRes.data.data);
+      }
+      if (bossesRes?.data?.success && bossesRes?.data?.data) {
+        setBosses(bossesRes.data.data);
+      }
+
+      window.dispatchEvent(new CustomEvent('app-refresh'));
     } catch (error) {
+      loadUsers();
+      loadBosses();
       toast.error(error.response?.data?.message || "Error creating user");
     }
   };
@@ -221,13 +235,28 @@ const AdminHome = () => {
     if (!confirm(`¿Estás seguro de ${action} este usuario?`)) return;
 
     try {
+      setUsers(prevUsers =>
+        prevUsers.map(u =>
+          u.id === userId ? { ...u, active: !u.active } : u
+        )
+      );
+
       await usersService.delete(userId);
       clearCache('admin_users');
       clearCache('admin_bosses');
       toast.success(`Usuario ${action}do correctamente`);
-      loadUsers();
+
+      const [usersRes] = await Promise.all([
+        fetchWithoutCache('admin_users', async () => await usersService.getAll(), {})
+      ]);
+
+      if (usersRes?.data?.success && usersRes?.data?.data) {
+        setUsers(usersRes.data.data);
+      }
+
       window.dispatchEvent(new CustomEvent('app-refresh'));
     } catch (error) {
+      loadUsers();
       toast.error(
         error.response?.data?.message || `Error al ${action} usuario`
       );
@@ -259,15 +288,32 @@ const AdminHome = () => {
         updateData.password = editForm.password;
       }
 
+      setUsers(prevUsers =>
+        prevUsers.map(u =>
+          u.id === editingUser.id
+            ? { ...u, name: editForm.name, lastName: editForm.lastName, cuil: editForm.cuil, email: editForm.email }
+            : u
+        )
+      );
+
       await usersService.update(editingUser.id, updateData);
       clearCache('admin_users');
       clearCache('admin_bosses');
       toast.success("Usuario actualizado correctamente");
       setShowEditForm(false);
       setEditingUser(null);
+
+      const [usersRes] = await Promise.all([
+        fetchWithoutCache('admin_users', async () => await usersService.getAll(), {})
+      ]);
+
+      if (usersRes?.data?.success && usersRes?.data?.data) {
+        setUsers(usersRes.data.data);
+      }
+
       window.dispatchEvent(new CustomEvent('app-refresh'));
-      loadUsers();
     } catch (error) {
+      loadUsers();
       toast.error(
         error.response?.data?.message || "Error al actualizar usuario"
       );
@@ -659,10 +705,10 @@ const AdminHome = () => {
           {loading ? (
             <LoadingSpinner text="Cargando usuarios..." />
           ) : getUsersByRole(
-            activeTab === "clientes" 
-              ? 1 
-              : activeTab === "mecanicos" 
-                ? 2 
+            activeTab === "clientes"
+              ? 1
+              : activeTab === "mecanicos"
+                ? 2
                 : activeTab === "jefes"
                   ? 3
                   : 5
@@ -688,10 +734,10 @@ const AdminHome = () => {
             </Card>
           ) : (
             getUsersByRole(
-              activeTab === "clientes" 
-                ? 1 
-                : activeTab === "mecanicos" 
-                  ? 2 
+              activeTab === "clientes"
+                ? 1
+                : activeTab === "mecanicos"
+                  ? 2
                   : activeTab === "jefes"
                     ? 3
                     : 5
@@ -707,8 +753,8 @@ const AdminHome = () => {
                         >
                           <User
                             className={`h-6 w-6 ${userItem.active
-                                ? "text-green-600"
-                                : "text-red-600"
+                              ? "text-green-600"
+                              : "text-red-600"
                               }`}
                           />
                         </div>
@@ -788,8 +834,8 @@ const AdminHome = () => {
                   >
                     <User
                       className={`h-8 w-8 ${showUserDetails.active
-                          ? "text-green-600"
-                          : "text-red-600"
+                        ? "text-green-600"
+                        : "text-red-600"
                         }`}
                     />
                   </div>

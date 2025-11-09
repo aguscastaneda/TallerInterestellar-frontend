@@ -125,6 +125,16 @@ export const fetchWithCache = async (route, fetchFn, params = {}, ttl = DEFAULT_
     return data;
 };
 
+export const fetchWithoutCache = async (route, fetchFn, params = {}, ttl = DEFAULT_TTL) => {
+    clearCache(route, params);
+
+    const data = await fetchFn();
+
+    setCachedData(route, data, params, ttl);
+
+    return data;
+};
+
 
 if (typeof window !== 'undefined') {
     clearExpiredCache();

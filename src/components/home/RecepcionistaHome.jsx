@@ -3,7 +3,7 @@ import { toast } from 'react-hot-toast';
 import NavBar from '../NavBar';
 import { useConfig } from '../../contexts/ConfigContext';
 import { carsService, carStatesService } from '../../services/api';
-import { fetchWithCache, clearCache } from '../../services/cache';
+import { fetchWithCache, fetchWithoutCache, clearCache } from '../../services/cache';
 import { Button, Card, CardContent, Badge, Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter, SegmentedControl } from '../ui';
 import { Car, Eye, CheckCircle, User, Mail, Phone, Calendar, MapPin } from 'lucide-react';
 
@@ -65,13 +65,39 @@ const RecepcionistaHome = () => {
 
   const handleDeliverCar = async (carId) => {
     try {
+      setCars(prevCars =>
+        prevCars.map(car =>
+          car.id === carId
+            ? { ...car, statusId: 7, status: { id: 7, name: 'Entregado' } }
+            : car
+        )
+      );
+      setAllCars(prevCars =>
+        prevCars.map(car =>
+          car.id === carId
+            ? { ...car, statusId: 7, status: { id: 7, name: 'Entregado' } }
+            : car
+        )
+      );
+
       await carStatesService.deliverCar(carId);
       clearCache('recepcionista_cars', {});
       toast.success('Auto entregado exitosamente');
       setShowDeliveryModal(null);
-      loadCars();
+
+      const response = await fetchWithoutCache(
+        'recepcionista_cars',
+        async () => await carsService.getAll(),
+        {}
+      );
+      if (response?.data?.success && response?.data?.data) {
+        setAllCars(response.data.data);
+        setCars(response.data.data);
+      }
+
       window.dispatchEvent(new CustomEvent('app-refresh'));
     } catch (error) {
+      loadCars();
       console.error('Error entregando auto:', error);
       toast.error('Error al entregar el auto');
     }

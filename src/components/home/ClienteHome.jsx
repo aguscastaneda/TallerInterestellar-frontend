@@ -4,7 +4,7 @@ import NavBar from '../NavBar';
 import { useAuth } from '../../contexts/AuthContext';
 import { useConfig } from '../../contexts/ConfigContext';
 import { carsService, usersService, requestsService } from '../../services/api';
-import { fetchWithCache, clearCache } from '../../services/cache';
+import { fetchWithCache, fetchWithoutCache, clearCache } from '../../services/cache';
 import { Button, Card, CardHeader, CardTitle, CardContent, CardFooter, Input, Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter } from '../ui';
 import { Plus, Car, Wrench, Settings, Eye, X, CheckCircle, Clock, AlertCircle, Trash2 } from 'lucide-react';
 import { licensePlateValidator } from '../../utils/licensePlateValidator';
@@ -128,15 +128,39 @@ const ClienteHome = () => {
         chassis: form.chassis.trim().toUpperCase(),
         statusId: 1
       };
-      await carsService.create(payload);
+
+      const newCar = {
+        id: Date.now(),
+        licensePlate: normalizedLicensePlate,
+        brand: form.brand.trim(),
+        model: form.model.trim(),
+        year: parseInt(form.year),
+        kms: parseInt(form.kms),
+        chassis: form.chassis.trim().toUpperCase(),
+        statusId: 1,
+        status: { id: 1, name: 'Entrada' }
+      };
+      setCars(prev => [newCar, ...prev]);
+
+      const response = await carsService.create(payload);
       clearCache('cliente_cars', { clientId });
       toast.success('Patente registrada');
       setShowAdd(false);
       setForm({ licensePlate: '', brand: '', model: '', year: '', kms: '', chassis: '' });
-      window.dispatchEvent(new CustomEvent('app-refresh'));
       setFormErrors({});
-      load();
+
+      const [carsRes] = await Promise.all([
+        fetchWithoutCache(
+          'cliente_cars',
+          async () => await carsService.getByClient(clientId),
+          { clientId }
+        )
+      ]);
+      setCars(carsRes?.data?.data || []);
+
+      window.dispatchEvent(new CustomEvent('app-refresh'));
     } catch (error) {
+      load();
       console.error('Error creating car:', error);
       toast.error(error.response?.data?.message || 'Error al crear');
     }
@@ -179,7 +203,15 @@ const ClienteHome = () => {
 
     setIsCreatingRequest(true);
     try {
-      await requestsService.create({
+      setCars(prevCars =>
+        prevCars.map(car =>
+          car.id === requestOpenId
+            ? { ...car, statusId: 2, status: { id: 2, name: 'Pendiente' } }
+            : car
+        )
+      );
+
+      const response = await requestsService.create({
         carId: requestOpenId,
         clientId,
         description: requestForm.description,
@@ -189,10 +221,19 @@ const ClienteHome = () => {
       clearCache('cliente_cars', { clientId });
       toast.success('Solicitud enviada');
       setRequestOpenId(null);
-      window.dispatchEvent(new CustomEvent('app-refresh'));
 
-      load();
+      const [carsRes] = await Promise.all([
+        fetchWithoutCache(
+          'cliente_cars',
+          async () => await carsService.getByClient(clientId),
+          { clientId }
+        )
+      ]);
+      setCars(carsRes?.data?.data || []);
+
+      window.dispatchEvent(new CustomEvent('app-refresh'));
     } catch (error) {
+      load();
       console.error('Error creating request:', error);
       toast.error(error.response?.data?.message || 'Error al solicitar');
     } finally {
@@ -204,6 +245,13 @@ const ClienteHome = () => {
     if (!carToCancel) return;
 
     try {
+      setCars(prevCars =>
+        prevCars.map(car =>
+          car.id === carToCancel
+            ? { ...car, statusId: 1, status: { id: 1, name: 'Entrada' } }
+            : car
+        )
+      );
 
       const response = await requestsService.getByClient(clientId);
       const requests = response.data.data || [];
@@ -213,12 +261,23 @@ const ClienteHome = () => {
         await requestsService.cancelRequest(requestToCancel.id);
         clearCache('cliente_cars', { clientId });
         toast.success('Solicitud cancelada');
+
+        const [carsRes] = await Promise.all([
+          fetchWithoutCache(
+            'cliente_cars',
+            async () => await carsService.getByClient(clientId),
+            { clientId }
+          )
+        ]);
+        setCars(carsRes?.data?.data || []);
+
         window.dispatchEvent(new CustomEvent('app-refresh'));
-        load();
       } else {
         toast.error('No se encontró una solicitud activa para este vehículo');
+        load();
       }
     } catch (error) {
+      load();
       console.error('Error canceling request:', error);
       toast.error('Error al cancelar solicitud');
     } finally {
@@ -250,12 +309,25 @@ const ClienteHome = () => {
     }
 
     try {
+      const carToDelete = cars.find(c => c.id === carId);
+      setCars(prevCars => prevCars.filter(car => car.id !== carId));
+
       await carsService.delete(carId);
       clearCache('cliente_cars', { clientId });
       toast.success('Vehículo eliminado exitosamente');
+
+      const [carsRes] = await Promise.all([
+        fetchWithoutCache(
+          'cliente_cars',
+          async () => await carsService.getByClient(clientId),
+          { clientId }
+        )
+      ]);
+      setCars(carsRes?.data?.data || []);
+
       window.dispatchEvent(new CustomEvent('app-refresh'));
-      load();
     } catch (error) {
+      load();
       console.error('Error deleting car:', error);
       toast.error(error.response?.data?.message || 'Error al eliminar el vehículo');
     }

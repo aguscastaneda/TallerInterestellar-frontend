@@ -4,7 +4,7 @@ import { toast } from "react-hot-toast";
 import { useAuth } from "../../contexts/AuthContext";
 import { useConfig } from "../../contexts/ConfigContext";
 import { usersService, requestsService, carsService } from "../../services/api";
-import { fetchWithCache, clearCache } from "../../services/cache";
+import { fetchWithCache, fetchWithoutCache, clearCache } from "../../services/cache";
 import {
   Button,
   Card,
@@ -143,12 +143,52 @@ const JefeHome = () => {
 
   const assignMechanic = async (requestId, mechanicId) => {
     try {
-      await requestsService.assignMechanic(requestId, mechanicId);
+      const selectedMechanic = mechanics.find(m => m.id === mechanicId);
+      setRequests(prevRequests =>
+        prevRequests.map(req =>
+          req.id === requestId
+            ? {
+              ...req,
+              status: 'ASSIGNED',
+              assignedMechanic: selectedMechanic ? {
+                id: selectedMechanic.id,
+                user: selectedMechanic.user
+              } : null
+            }
+            : req
+        )
+      );
+
+      const response = await requestsService.assignMechanic(requestId, mechanicId);
+
       clearCache('jefe_requests', { bossId });
       toast.success("Asignado");
-      load();
+
+      if (response?.data?.data) {
+        const updatedRequest = response.data.data;
+        setRequests(prevRequests =>
+          prevRequests.map(req =>
+            req.id === requestId ? updatedRequest : req
+          ).filter(r => r.status !== "CANCELLED")
+        );
+      } else {
+        const [reqRes] = await Promise.all([
+          fetchWithoutCache(
+            'jefe_requests',
+            async () => await requestsService.getByBoss(bossId),
+            { bossId }
+          )
+        ]);
+
+        const filteredRequests = (reqRes?.data?.data || []).filter(
+          (r) => r.status !== "CANCELLED"
+        );
+        setRequests(filteredRequests);
+      }
+
       window.dispatchEvent(new CustomEvent('app-refresh'));
     } catch (error) {
+      load();
       toast.error(error.response?.data?.message || "Error al asignar");
     }
   };
@@ -168,11 +208,10 @@ const JefeHome = () => {
         bossId: bossId,
       };
 
-      await usersService.create(mechanicData);
+      const response = await usersService.create(mechanicData);
       clearCache('jefe_mechanics', {});
       toast.success("Mecánico creado correctamente");
       setShowCreateMechanic(false);
-      window.dispatchEvent(new CustomEvent('app-refresh'));
       setCreateForm({
         name: "",
         lastName: "",
@@ -181,8 +220,23 @@ const JefeHome = () => {
         phone: "",
         cuil: "",
       });
-      load();
+
+      const [mechsRes] = await Promise.all([
+        fetchWithoutCache(
+          'jefe_mechanics',
+          async () => await usersService.getMechanics(),
+          {}
+        )
+      ]);
+
+      const filteredMechanics = (mechsRes?.data?.data || []).filter(
+        (m) => m.bossId === bossId
+      );
+      setMechanics(filteredMechanics);
+
+      window.dispatchEvent(new CustomEvent('app-refresh'));
     } catch (e) {
+      load();
       console.error("Error al crear mecánico:", e);
       toast.error(e.response?.data?.message || "Error al crear mecánico");
     }
@@ -213,14 +267,46 @@ const JefeHome = () => {
       if (editForm.password.trim()) {
         updateData.password = editForm.password;
       }
+      setMechanics(prevMechanics =>
+        prevMechanics.map(m =>
+          m.user.id === editingMechanic.user.id
+            ? {
+              ...m,
+              user: {
+                ...m.user,
+                name: editForm.name,
+                lastName: editForm.lastName,
+                email: editForm.email,
+                phone: editForm.phone,
+                cuil: editForm.cuil
+              }
+            }
+            : m
+        )
+      );
+
       await usersService.update(editingMechanic.user.id, updateData);
       clearCache('jefe_mechanics', {});
       toast.success("Mecánico actualizado correctamente");
       setShowEditMechanic(false);
       setEditingMechanic(null);
+
+      const [mechsRes] = await Promise.all([
+        fetchWithoutCache(
+          'jefe_mechanics',
+          async () => await usersService.getMechanics(),
+          {}
+        )
+      ]);
+
+      const filteredMechanics = (mechsRes?.data?.data || []).filter(
+        (m) => m.bossId === bossId
+      );
+      setMechanics(filteredMechanics);
+
       window.dispatchEvent(new CustomEvent('app-refresh'));
-      load();
     } catch (e) {
+      load();
       toast.error(e.response?.data?.message || "Error al actualizar mecánico");
     }
   };
@@ -228,14 +314,30 @@ const JefeHome = () => {
   const handleDeleteMechanic = async (userId) => {
     if (!confirm("¿Estás seguro de eliminar este mecánico?")) return;
     try {
+      setMechanics(prevMechanics => prevMechanics.filter(m => m.user.id !== userId));
+
       console.log("Eliminando mecánico con userId:", userId);
       const response = await usersService.delete(userId);
       console.log("Respuesta del servidor:", response.data);
       clearCache('jefe_mechanics', {});
       toast.success("Mecánico eliminado correctamente");
+
+      const [mechsRes] = await Promise.all([
+        fetchWithoutCache(
+          'jefe_mechanics',
+          async () => await usersService.getMechanics(),
+          {}
+        )
+      ]);
+
+      const filteredMechanics = (mechsRes?.data?.data || []).filter(
+        (m) => m.bossId === bossId
+      );
+      setMechanics(filteredMechanics);
+
       window.dispatchEvent(new CustomEvent('app-refresh'));
-      await load();
     } catch (e) {
+      load();
       console.error("Error al eliminar mecánico:", e);
       toast.error("Error al eliminar mecánico");
     }

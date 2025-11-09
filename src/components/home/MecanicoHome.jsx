@@ -3,7 +3,7 @@ import NavBar from '../NavBar';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { carsService, requestsService } from '../../services/api';
-import { fetchWithCache, clearCache } from '../../services/cache';
+import { fetchWithCache, fetchWithoutCache, clearCache } from '../../services/cache';
 import { Button, Card, CardContent, Badge, Input, Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter, SegmentedControl } from '../ui';
 import { Wrench, Clock, CheckCircle, Eye, Square, DollarSign, Car, Calendar, Clock3, CalendarCheck, Shield } from 'lucide-react';
 import PropTypes from 'prop-types';
@@ -45,9 +45,9 @@ const MecanicoHome = () => {
     const handleRefresh = () => {
       load();
     };
-    
+
     window.addEventListener('app-refresh', handleRefresh);
-    
+
     return () => {
       clearInterval(interval);
       window.removeEventListener('app-refresh', handleRefresh);
@@ -67,22 +67,60 @@ const MecanicoHome = () => {
 
   const sendBudget = async (reqItem, budgetData) => {
     try {
+      setRequests(prevRequests =>
+        prevRequests.map(req =>
+          req.id === reqItem.id
+            ? { ...req, status: 'PRESUPUESTO_ENVIADO' }
+            : req
+        )
+      );
+
       await requestsService.sendBudget(reqItem.id, budgetData);
       clearCache('mecanico_requests', { mechanicId });
       toast.success('Presupuesto enviado al cliente');
-      load();
+
+      const response = await fetchWithoutCache(
+        'mecanico_requests',
+        async () => await requestsService.getByMechanic(mechanicId),
+        { mechanicId }
+      );
+      const filteredRequests = (response?.data?.data || []).filter(request => request.status !== 'CANCELLED');
+      setRequests(filteredRequests);
+
       window.dispatchEvent(new CustomEvent('app-refresh'));
-    } catch (error) { toast.error(error.response?.data?.message || 'Error al enviar presupuesto'); }
+    } catch (error) {
+      load();
+      toast.error(error.response?.data?.message || 'Error al enviar presupuesto');
+    }
   };
 
   const finishWork = async (reqItem, payload) => {
     try {
+      setRequests(prevRequests =>
+        prevRequests.map(req =>
+          req.id === reqItem.id
+            ? { ...req, status: 'COMPLETED' }
+            : req
+        )
+      );
+
       await requestsService.updateStatus(reqItem.id, { status: 'COMPLETED', description: payload.description, cost: payload.cost });
       clearCache('mecanico_requests', { mechanicId });
       toast.success('Trabajo finalizado');
-      load();
+
+      const response = await fetchWithoutCache(
+        'mecanico_requests',
+        async () => await requestsService.getByMechanic(mechanicId),
+        { mechanicId }
+      );
+      const filteredRequests = (response?.data?.data || []).filter(request => request.status !== 'CANCELLED');
+      setRequests(filteredRequests);
+
       window.dispatchEvent(new CustomEvent('app-refresh'));
-    } catch (error) { toast.error(error.response?.data?.message || 'Error al finalizar'); }
+    } catch (error) {
+      load();
+      toast.error(error.response?.data?.message || 'Error al finalizar');
+    }
   };
 
   const getStatusIcon = (status) => {
