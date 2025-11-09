@@ -26,6 +26,7 @@ const ClienteHome = () => {
   const [showProblemSelector, setShowProblemSelector] = useState(false);
   const [selectedProblemData, setSelectedProblemData] = useState(null);
   const [carToCancel, setCarToCancel] = useState(null);
+  const [isCreatingRequest, setIsCreatingRequest] = useState(false);
 
   const clientId = user?.client?.id;
 
@@ -174,7 +175,9 @@ const ClienteHome = () => {
   };
 
   const createRequest = async () => {
-    if (!clientId || !requestOpenId) return;
+    if (!clientId || !requestOpenId || isCreatingRequest) return;
+
+    setIsCreatingRequest(true);
     try {
       await requestsService.create({
         carId: requestOpenId,
@@ -192,6 +195,8 @@ const ClienteHome = () => {
     } catch (error) {
       console.error('Error creating request:', error);
       toast.error(error.response?.data?.message || 'Error al solicitar');
+    } finally {
+      setIsCreatingRequest(false);
     }
   };
 
@@ -574,8 +579,9 @@ const ClienteHome = () => {
                           <Button
                             onClick={createRequest}
                             leftIcon={<CheckCircle className="h-4 w-4" />}
+                            disabled={isCreatingRequest}
                           >
-                            Enviar Solicitud
+                            {isCreatingRequest ? 'Enviando...' : 'Enviar Solicitud'}
                           </Button>
                         </div>
                       </div>

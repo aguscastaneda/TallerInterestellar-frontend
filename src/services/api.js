@@ -70,14 +70,17 @@ api.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-
       localStorage.removeItem('token');
 
-      if (navigateFunction) {
-        navigateFunction('/login');
-      } else {
-
-        window.location.href = '/login';
+      const currentPath = window.location.pathname;
+      if (currentPath !== '/login' && currentPath !== '/register') {
+        setTimeout(() => {
+          if (navigateFunction) {
+            navigateFunction('/login');
+          } else {
+            window.location.href = '/login';
+          }
+        }, 100);
       }
     }
     return Promise.reject(error);

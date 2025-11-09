@@ -34,6 +34,7 @@ import {
   CheckCircle,
   XCircle,
   Car,
+  UserCircle,
 } from "lucide-react";
 import { validateUserCreationForm } from "../../utils/validation";
 
@@ -384,6 +385,12 @@ const AdminHome = () => {
                 icon: <Users className="h-4 w-4" />,
                 count: getUsersByRole(3).length,
               },
+              {
+                value: "recepcionistas",
+                label: "Recepcionistas",
+                icon: <UserCircle className="h-4 w-4" />,
+                count: getUsersByRole(5).length,
+              },
             ]}
             value={activeTab}
             onChange={setActiveTab}
@@ -402,7 +409,9 @@ const AdminHome = () => {
               ? "Cliente"
               : activeTab === "mecanicos"
                 ? "Mecánico"
-                : "Jefe de Mecánicos"}
+                : activeTab === "jefes"
+                  ? "Jefe de Mecánicos"
+                  : "Recepcionista"}
           </Button>
         </div>
 
@@ -420,7 +429,9 @@ const AdminHome = () => {
                   ? "Cliente"
                   : activeTab === ROLE_NAMES.MECHANIC
                     ? "Mecánico"
-                    : "Jefe de Mecánicos"}
+                    : activeTab === ROLE_NAMES.BOSS
+                      ? "Jefe de Mecánicos"
+                      : "Recepcionista"}
               </ModalTitle>
             </ModalHeader>
             <ModalContent>
@@ -648,7 +659,13 @@ const AdminHome = () => {
           {loading ? (
             <LoadingSpinner text="Cargando usuarios..." />
           ) : getUsersByRole(
-            activeTab === "clientes" ? 1 : activeTab === "mecanicos" ? 2 : 3
+            activeTab === "clientes" 
+              ? 1 
+              : activeTab === "mecanicos" 
+                ? 2 
+                : activeTab === "jefes"
+                  ? 3
+                  : 5
           ).length === 0 ? (
             <Card className="text-center py-12">
               <CardContent>
@@ -662,14 +679,22 @@ const AdminHome = () => {
                     ? "cliente"
                     : activeTab === "mecanicos"
                       ? "mecánico"
-                      : "jefe de mecánicos"}{" "}
+                      : activeTab === "jefes"
+                        ? "jefe de mecánicos"
+                        : "recepcionista"}{" "}
                   para comenzar
                 </p>
               </CardContent>
             </Card>
           ) : (
             getUsersByRole(
-              activeTab === "clientes" ? 1 : activeTab === "mecanicos" ? 2 : 3
+              activeTab === "clientes" 
+                ? 1 
+                : activeTab === "mecanicos" 
+                  ? 2 
+                  : activeTab === "jefes"
+                    ? 3
+                    : 5
             ).map((userItem) => (
               <Card key={userItem.id} className="card-hover">
                 <CardContent className="p-6">

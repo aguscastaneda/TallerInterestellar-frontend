@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { api } from '../services/api';
 
@@ -14,30 +14,75 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const isCheckingAuth = useRef(false);
 
   useEffect(() => {
-    if (token) {
-      checkAuth();
-    } else {
-      setLoading(false);
+    if (!isInitialized) {
+      const storedToken = localStorage.getItem('token');
+      if (storedToken) {
+        setToken(storedToken);
+      } else {
+        setLoading(false);
+      }
+      setIsInitialized(true);
     }
-  }, [token]);
+  }, [isInitialized]);
 
-  const checkAuth = async () => {
+  const logout = useCallback(() => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem('token');
+    delete api.defaults.headers.common['Authorization'];
+    setLoading(false);
+    isCheckingAuth.current = false;
+  }, []);
+
+  const checkAuth = useCallback(async () => {
+    if (!token || isCheckingAuth.current) {
+      if (!token) {
+        setLoading(false);
+      }
+      return;
+    }
+
+    isCheckingAuth.current = true;
+
     try {
+      setLoading(true);
       const response = await api.get('/auth/me', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setUser(response.data.data);
+
+      if (response.data && response.data.data) {
+        setUser(response.data.data);
+      } else {
+        logout();
+      }
     } catch (error) {
       console.error('Error verificando autenticación:', error);
-      logout();
+
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        logout();
+      } else {
+        setUser(null);
+        setLoading(false);
+      }
     } finally {
       setLoading(false);
+      isCheckingAuth.current = false;
     }
-  };
+  }, [token, logout]);
+
+  useEffect(() => {
+    if (isInitialized && token && !isCheckingAuth.current) {
+      checkAuth();
+    } else if (isInitialized && !token) {
+      setLoading(false);
+    }
+  }, [token, isInitialized, checkAuth]);
 
   const login = async (email, password) => {
     try {
@@ -84,12 +129,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('token');
-    delete api.defaults.headers.common['Authorization'];
-  };
 
   const updateUser = (newUserData) => {
     setUser(newUserData);
