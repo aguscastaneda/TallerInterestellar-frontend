@@ -215,7 +215,7 @@ const AppRoutes = () => {
         path="/home/client/repairs"
         element={
           <ProtectedRoute allowedRoles={['cliente']}>
-            <ClientHelp />
+            <ClientRepairs />
           </ProtectedRoute>
         }
       />
