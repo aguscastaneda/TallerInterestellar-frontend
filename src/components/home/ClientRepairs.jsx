@@ -120,7 +120,8 @@ const ClientRepairs = () => {
   };
 
   const loadRepairs = async () => {
-    if (!clientId) return;
+    if (!clientId) 
+      { console.log("No hay cliente"); return; }
 
     try {
       const response = await clientRepairsService.getRepairs(clientId);
